@@ -1,0 +1,35 @@
+{{ define "portfolio" }}
+{{template "base"}}
+
+<h3>Summary</h3>
+<table>
+    <tr>
+        <th>Name</th>
+        <th>6M</th>
+        <th>1Y</th>
+        <th>3Y</th>
+    </tr>
+    <tr>
+        <td>Porfolio</td>
+        <td>{{ .AvgPorfolio6M }}</td>
+        <td>{{ .AvgPorfolio1Y }}</td>
+        <td>{{ .AvgPorfolio3Y }}</td>
+    </tr>
+    <tr>
+        <td>NIFTY500</td>
+        <td>{{ .AvgIndex6M }}</td>
+        <td>{{ .AvgIndex1Y }}</td>
+        <td>{{ .AvgIndex3Y }}</td>
+    </tr>
+</table>
+
+<h3>Stocks</h3>
+{{.ReturnResp.Portfolio6M}}
+
+<hr />
+{{.ReturnResp.Portfolio1Y}}
+
+<hr />
+{{.ReturnResp.Portfolio3Y}}
+
+{{ end }}

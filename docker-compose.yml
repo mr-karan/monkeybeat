@@ -1,0 +1,24 @@
+version: "3.7"
+
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:22
+    restart: unless-stopped
+    network_mode: "host"
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 262144
+        hard: 262144
+    container_name: clickhouse
+    hostname: clickhouse
+    # ports:
+    #   - 9000:9000
+    #   - 8123:8123
+    volumes:
+      - type: volume
+        source: ch-data
+        target: /var/lib/clickhouse
+
+volumes:
+  ch-data:

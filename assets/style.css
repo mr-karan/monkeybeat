@@ -1,0 +1,36 @@
+:root {
+    --primary: #386641;
+    --secondary: #ffc300;
+    --light: #999;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    font-size: 17px;
+    line-height: 26px;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: "Fira Sans", sans-serif;
+}
+
+h1 {
+    font-size: 3rem;
+    line-height: 2.4rem;
+}
+
+a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+a:hover {
+    color: var(--secondary);
+}

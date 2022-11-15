@@ -1,0 +1,102 @@
+{{ define "base" }}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>MonkeyBeat | Can a monkey beat your fund manager?</title>
+    <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+    <meta name="description"
+        content="Generate a portfolio of randomly selected stocks from NIFTY500 universe and see if it beats the underlying benchmark">
+    <meta name="author" content="Karan Sharma">
+    <meta name="keywords" content="stocks,returns,equity,portfolio,nifty500,nifty">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/style.css">
+</head>
+
+<body>
+    <section class="container">
+        <header>
+            <h1><a href="/">MonkeyBeat.market</a></h1>
+            <p>Generate a random portfolio from NIFTY 500 list of stocks and see if it beats the markets!</p>
+        </header>
+
+        <main>
+            <div class="generate">
+                <form method="get" action="/portfolio">
+                    <button type="submit">Generate Portfolio</button>
+                </form>
+            </div>
+
+            {{if .ShowPortfolio}}
+            {{block "portfolio" .}}{{end}}
+            {{end}}
+
+
+            <div style="width: 800px;">
+                <canvas id="line-chart" width="400" height="450"></canvas>
+            </div>
+
+        </main>
+
+    </section>
+</body>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // const ctx = document.getElementById('myChart');
+
+    var returns_data = []
+
+    {{ range .DailyReturns}}
+    returns_data.push({
+        x: "{{.Date}}",
+        y: "{{.CurrentInvested}}"
+    });
+    {{ end}}
+
+    new Chart(document.getElementById("line-chart"), {
+        type: 'line',
+        data: {
+            datasets: [{
+                data: returns_data,
+                label: "Portfolio",
+                borderColor: "#3e95cd",
+                fill: false
+            }
+            ]
+        },
+        options: {
+            responsive: true,
+            title: {
+                display: true,
+                text: 'World population per region (in millions)'
+            },
+            scales: {
+					xAxes: [{
+						type: 'time',
+						time: {
+							unit: 'month',
+                            displayFormats: {
+                        month: 'MMM YYYY',
+                        day: 'MMM YYYY'
+                    }
+						},
+					}],
+					yAxes: [{
+						display: true,
+						scaleLabel: {
+							display: true,
+							labelString: 'value'
+						}
+					}]
+				}
+        }
+    });
+</script>
+
+</html>
+{{ end }}
