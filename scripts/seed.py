@@ -13,6 +13,7 @@ logging.basicConfig(
 
 INSTRUMENTS_FILE = "ind_nifty500list.csv"
 TICKER_DATA_OUTPUT_FILE = "ticker.csv"
+INDEX_DATA_OUTPUT_FILE = "index.csv"
 SUFFIX = ".NS"
 NIFTY500_SYMBOL = "^CRSLDX"
 
@@ -43,20 +44,28 @@ args = parser.parse_args()
 
 
 def main():
-    print(args.start, args.end)
     # Load the list of instruments to extract the data for.
     df = pd.read_csv(INSTRUMENTS_FILE)
-
     # Load the symbols column as a list and add the suffix to each stock.
-    ticker_list = [s + SUFFIX for s in df["Symbol"].to_list()]
-    # Append NIFTY500 index to the list as well since we need to compute the returns for the index also.
-    ticker_list.append(NIFTY500_SYMBOL)
+    ticker_list = df["Symbol"].to_list()
 
+    # Download data for stocks.
+    download(ticker_list, False, TICKER_DATA_OUTPUT_FILE)
+
+    # Download data for indices.
+    download([NIFTY500_SYMBOL], True, INDEX_DATA_OUTPUT_FILE)
+
+
+def download(symbols, is_index, filename):
     # Append data of all stocks to this list.
     df_list = list()
 
     # For each ticker, fetch the data.
-    for ticker in ticker_list:
+    for ticker in symbols:
+        # Add a suffix `.NS` for the stocks.
+        if not is_index:
+            ticker = ticker + SUFFIX
+
         data = yf.download(
             ticker,
             start=args.start,
@@ -65,15 +74,17 @@ def main():
             interval="1d",
             auto_adjust=True,
         )
-        # Remove the suffix if it has.
-        data["ticker"] = ticker.split(".NS")[0]
+        data["ticker"] = ticker
+        data["segment"] = "EQ"
+        if is_index:
+            data["segment"] = "INDEX"
         df_list.append(data)
 
-    # combine all dataframes into a single dataframe
+    # Combine all dataframes into a single dataframe.
     df = pd.concat(df_list)
 
-    # save to csv
-    df.to_csv(path.join(args.dir, TICKER_DATA_OUTPUT_FILE))
+    # Save to csv.
+    df.to_csv(path.join(args.dir, filename))
 
 
 if __name__ == "__main__":

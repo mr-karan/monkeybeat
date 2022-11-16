@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+# NOTE: This is UNUSED.
+# Since bhavcopy doesn't adjust the close price to accomodate corporate actions.
+# this data source is not used.
+# I've just kept the script for reference/future use if any.
+# Check `load_data.sh` which is the current version in use.
+
 set -o errexit
 set -o nounset
 set -o pipefail
@@ -9,7 +15,6 @@ cd "$(dirname "$0")"
 # Number of days to backfill the data for seeding DB.
 DAYS_AGO=400
 # Directory to temporary store the bhav copy files.
-# TODO: Can just make this mktemp, kept this dir hardcoded for debugging.
 OUTPUT_DIR="data"
 
 main() {
@@ -42,7 +47,7 @@ main() {
         unzip -d ${OUTPUT_DIR} "${OUTPUT_FILE}" && rm "${OUTPUT_FILE}"
 
         # Load the relevant data in DB
-        cat ${OUTPUT_DIR}/"${FILENAME}" | clickhouse-client --query="INSERT INTO stocks.prices SELECT toDate(parseDateTimeBestEffort(TIMESTAMP)) AS date,SYMBOL as tradingsymbol,CLOSE AS close FROM input('SYMBOL String,SERIES String,OPEN Float64,HIGH Float64,LOW Float64,CLOSE Float64,LAST Float64,PREVCLOSE Float64,TOTTRDQTY Float64,TOTTRDVAL Float64,TIMESTAMP String,TOTALTRADES Float64,ISIN String') WHERE SERIES='EQ' FORMAT CSVWithNames"
+        cat ${OUTPUT_DIR}/"${FILENAME}" | clickhouse-client --query="INSERT INTO monkeybeat.stocks SELECT toDate(parseDateTimeBestEffort(TIMESTAMP)) AS date,SYMBOL as tradingsymbol,CLOSE AS close FROM input('SYMBOL String,SERIES String,OPEN Float64,HIGH Float64,LOW Float64,CLOSE Float64,LAST Float64,PREVCLOSE Float64,TOTTRDQTY Float64,TOTTRDVAL Float64,TIMESTAMP String,TOTALTRADES Float64,ISIN String') WHERE SERIES='EQ' FORMAT CSVWithNames"
         
         echo "✅ Inserted data for ${fetch_date}"
         rm ${OUTPUT_DIR}/"${FILENAME}"

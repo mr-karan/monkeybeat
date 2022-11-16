@@ -24,17 +24,6 @@ fresh: build run
 lint:
 	docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v1.43.0 golangci-lint run -v
 
-.PHONY: dev-docker
-dev-docker: clean build ## Build and spawns docker containers for the entire suite
-	cd dev; \
-	docker-compose build ; \
-	CURRENT_UID=$(id -u):$(id -g) docker-compose up
-
-.PHONY: rm-dev-docker
-rm-dev-docker: clean build ## Delete the docker containers including volumes.
-	cd dev; \
-	docker-compose down -v ; \
-
 .PHONY: schema
 schema:
 	cat schema.sql | clickhouse-client -mn

@@ -1,9 +1,9 @@
-CREATE DATABASE IF NOT EXISTS `stocks`;
+CREATE DATABASE IF NOT EXISTS `monkeybeat`;
 
-CREATE TABLE IF NOT EXISTS `stocks`.`prices` (
-    `date` Datetime('Asia/Kolkata'),
+CREATE TABLE IF NOT EXISTS `monkeybeat`.`prices` (
+    `date` Date,
     `tradingsymbol` String,
+    `segment` LowCardinality(String),
     `close` Float64
 ) ENGINE = ReplacingMergeTree()
-ORDER BY (tradingsymbol, toYYYYMMDD(date))
-
+ORDER BY (tradingsymbol, toYYYYMMDD(date));

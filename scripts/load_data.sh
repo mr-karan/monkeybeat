@@ -24,7 +24,8 @@ main() {
     python seed.py --from "${FROM_DATE}" --to "${TO_DATE}" --output "${OUTPUT_DIR}"
 
     # Load the relevant data in DB
-    cat ${OUTPUT_DIR}/"ticker.csv" | clickhouse-client --query="INSERT INTO stocks.prices SELECT toDate(Date) AS date,ticker as tradingsymbol,Close AS close FROM input('Date Date,Open Float64,High Float64,Low Float64,Close Float64,Volume Float64,ticker String') FORMAT CSVWithNames"
+    cat ${OUTPUT_DIR}/"ticker.csv" | clickhouse-client --query="INSERT INTO monkeybeat.prices SELECT toDate(Date) AS date,ticker as tradingsymbol, segment, Close AS close FROM input('Date Date,Open Float64,High Float64,Low Float64,Close Float64,Volume Float64,ticker String, segment String') FORMAT CSVWithNames"
+    cat ${OUTPUT_DIR}/"index.csv" | clickhouse-client --query="INSERT INTO monkeybeat.prices SELECT toDate(Date) AS date,ticker as tradingsymbol, segment, Close AS close FROM input('Date Date,Open Float64,High Float64,Low Float64,Close Float64,Volume Float64,ticker String, segment String') FORMAT CSVWithNames"
 
     # echo "✅ Inserted data for ${fetch_date}"
     # rm ${OUTPUT_DIR}/"${FILENAME}"

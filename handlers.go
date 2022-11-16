@@ -7,6 +7,17 @@ import (
 	"net/http"
 )
 
+// portfolioTpl is used to represent the data which is used to render
+// portfolio web view.
+type portfolioTpl struct {
+	DailyReturns        []DailyReturns
+	PortfolioReturns    ReturnsPeriod
+	IndexReturns        ReturnsPeriod
+	AvgStockReturns     map[string]float64
+	AvgIndexReturns     map[int]float64
+	AvgPortfolioReturns map[int]float64
+}
+
 // wrap is a middleware that wraps HTTP handlers and injects the "app" context.
 func wrap(app *App, next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -46,6 +57,7 @@ func sendErrorResponse(w http.ResponseWriter, message string, code int, data int
 		Message: message,
 		Data:    data,
 	}
+	// TODO: Have an error.html?
 	out, err := json.Marshal(resp)
 	if err != nil {
 		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
@@ -55,6 +67,7 @@ func sendErrorResponse(w http.ResponseWriter, message string, code int, data int
 	w.Write(out)
 }
 
+// handleIndex serves the index page.
 func handleIndex(w http.ResponseWriter, r *http.Request) {
 	var (
 		app = r.Context().Value("app").(*App)
@@ -62,109 +75,70 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 	app.tpl.ExecuteTemplate(w, "index", nil)
 }
 
-// Handler for generating a random portfolio.
+// handlePortfolio serves the portfolio page.
 func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 	var (
-		app = r.Context().Value("app").(*App)
-		out = ReturnResp{}
+		app                 = r.Context().Value("app").(*App)
+		portfolio           = make(ReturnsPeriod, 0)
+		index               = make(ReturnsPeriod, 0)
+		avgStockReturns     = make(map[string]float64, 0)
+		avgPortfolioReturns = make(map[int]float64, 0)
+		avgIndexReturns     = make(map[int]float64, 0)
+		dailyReturns        = make([]DailyReturns, 0)
 	)
 
 	// Fetch a list of stocks from DB.
-	stocks, err := app.getRandomStocks()
+	stocks, err := app.getRandomStocks(STOCKS_COUNT)
 	if err != nil {
 		app.lo.Error("error generating stocks", "error", err)
 		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
 		return
 	}
 
-	// Fetch portfolio returns for 6 months.
-	out.Portfolio6M, err = app.getReturns(stocks, 30*6)
-	if err != nil {
-		app.lo.Error("error fetching returns", "error", err)
-		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
-		return
-	}
+	// Fetch returns for various time periods.
+	for _, days := range returnPeriods {
+		returns, err := app.getPortfolioReturns(stocks, days)
+		if err != nil {
+			app.lo.Error("error fetching portfolio returns", "error", err)
+			sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
+			return
+		}
 
-	// Fetch portfolio returns for 1 year.
-	out.Portfolio1Y, err = app.getReturns(stocks, 365)
-	if err != nil {
-		app.lo.Error("error fetching returns", "error", err)
-		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
-		return
-	}
+		portfolio[days] = returns
+		avgPortfolioReturns[days] = computeAvg(returns)
 
-	// Fetch portfolio returns for 3 years.
-	out.Portfolio3Y, err = app.getReturns(stocks, 365*3)
-	if err != nil {
-		app.lo.Error("error fetching returns", "error", err)
-		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
-		return
-	}
-
-	// Fetch Index returns for 6 months.
-	index6M, err := app.getReturns([]string{N500_SYMBOL}, 30*6)
-	if err != nil {
-		app.lo.Error("error fetching returns", "error", err)
-		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
-		return
-	}
-
-	// Fetch Index returns for 1 year.
-	index1Y, err := app.getReturns([]string{N500_SYMBOL}, 365)
-	if err != nil {
-		app.lo.Error("error fetching returns", "error", err)
-		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
-		return
-	}
-
-	// Fetch Index returns for 3 years.
-	index3Y, err := app.getReturns([]string{N500_SYMBOL}, 365*3)
-	if err != nil {
-		app.lo.Error("error fetching returns", "error", err)
-		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
-		return
-	}
-
-	avgReturnsMap := make(map[string]AvgPortfolioReturns, len(out.Portfolio6M))
-	for _, v := range out.Portfolio6M {
-		avgReturnsMap[v.Symbol] = AvgPortfolioReturns{
-			Avg6M: v.Percent,
+		// Add individual stock returns.
+		for _, s := range returns {
+			avgStockReturns[fmt.Sprintf("%s_%d", s.Symbol, days)] = s.Percent
 		}
 	}
 
-	// for _,v:=range out.Portfolio6M {
-	// 	avgReturnsMap[v.Symbol]=AvgPortfolioReturns{
-	// 		Avg6M: v.Percent,
-	// 	}
-	// }
-
-	// for _,v:=range out.Portfolio6M {
-	// 	avgReturnsMap[v.Symbol]=AvgPortfolioReturns{
-	// 		Avg6M: v.Percent,
-	// 	}
-	// }
-
-	// Compute average returns.
-	out.AvgPorfolio6M = computeAvg(out.Portfolio6M)
-	out.AvgPorfolio1Y = computeAvg(out.Portfolio1Y)
-	out.AvgPorfolio3Y = computeAvg(out.Portfolio3Y)
-	out.AvgIndex6M = computeAvg(index6M)
-	out.AvgIndex1Y = computeAvg(index1Y)
-	out.AvgIndex3Y = computeAvg(index3Y)
+	// Fetch index returns for various time periods.
+	for _, days := range returnPeriods {
+		returns, err := app.getIndexReturns(stocks, days)
+		if err != nil {
+			app.lo.Error("error fetching index returns", "error", err)
+			sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
+			return
+		}
+		index[days] = returns
+		avgIndexReturns[days] = computeAvg(returns)
+	}
 
 	// Fetch the daily returns.
-	dailyReturns, err := app.getDailyReturns(stocks, 10000)
+	dailyReturns, err = app.getDailyValue(stocks, 10000)
 	if err != nil {
 		app.lo.Error("error fetching daily returns", "error", err)
 		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
 		return
 	}
 
-	fmt.Println(dailyReturns)
-
-	app.tpl.ExecuteTemplate(w, "portfolio", viewTpl{
-		ShowPortfolio: true,
-		ReturnResp:    out,
-		DailyReturns:  dailyReturns,
+	app.tpl.ExecuteTemplate(w, "portfolio", portfolioTpl{
+		DailyReturns:        dailyReturns,
+		PortfolioReturns:    portfolio,
+		IndexReturns:        index,
+		AvgStockReturns:     avgStockReturns,
+		AvgIndexReturns:     avgIndexReturns,
+		AvgPortfolioReturns: avgPortfolioReturns,
 	})
 }

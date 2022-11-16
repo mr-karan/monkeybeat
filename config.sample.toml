@@ -2,13 +2,13 @@
 log = "debug"
 
 [server]
-address = "0.0.0.0:7000"
+address = "0.0.0.0:7777"
 timeout = "7s"
 idle_timeout = "30s"
 
 [db]
 host = "127.0.0.1"
 port = 9000
+name = "monkeybeat"
 user = ""
 password = ""
-name = "stocks"
