@@ -1,0 +1,44 @@
+{{ define "header" }}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>MonkeyBeat | Can a monkey beat your fund manager?</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <meta name="description"
+        content="Generate a portfolio of randomly selected stocks from NIFTY500 universe and see if it beats the underlying benchmark">
+    <meta name="author" content="Karan Sharma">
+    <meta name="keywords" content="stocks,returns,equity,portfolio,nifty500,nifty">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <div class="container wrap">
+        <header>
+            <h1><a href="/">MonkeyBeat.market</a></h1>
+            <p>Generate a random portfolio from NIFTY 500 list of stocks and see if it beats the markets!</p>
+        </header>
+        <main>
+            <div class="generate">
+                <form method="get" action="/portfolio">
+                    <button type="submit">Generate Portfolio</button>
+                </form>
+            </div>    
+        </main>
+{{ end }}
+
+{{ define "footer" }}
+        <footer class="footer">
+            Made by Karan
+        </footer>
+    </div>
+</body>
+
+</html>
+{{ end }}

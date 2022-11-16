@@ -1,6 +1,14 @@
-package main
+-- monkeybeat
+-- name: get-random-stocks
+-- Fetch a list of random stocks for the given count.
+-- $1: count
+SELECT groupArraySample($1)(tradingsymbol) AS stocks FROM stocks.prices
 
-var computeReturnsSQL = `WITH
+-- name: get-returns
+-- Get average returns for given date and given list of stocks.
+-- $1: day
+-- $2: stocks
+WITH
 start AS (
 	SELECT date FROM stocks.prices WHERE toDate(date)>=today() - INTERVAL $1 DAY ORDER BY date ASC LIMIT 1
 ),
@@ -30,11 +38,12 @@ new.tradingsymbol AS symbol,
 ((new.close / old.close) - 1) * 100 AS return_percent
 FROM old
 INNER JOIN new ON old.tradingsymbol = new.tradingsymbol
-`
 
-var selectRandStocksSQL = `SELECT groupArraySample(10)(tradingsymbol) AS stocks FROM stocks.prices`
-
-var dailyReturnsSQL = `SELECT
+-- name: get-daily-returns
+-- Fetch the daily returns by computing the close price each day and fetching the percentage difference from starting date.
+-- $1: stocks
+-- $2: amount_invested
+SELECT
 formatDateTime(toDate(date), '%F') AS date,
 SUM(close) AS present_close,
 (
@@ -51,4 +60,3 @@ FROM stocks.prices
 WHERE (tradingsymbol IN ($1))
 GROUP BY date
 ORDER BY date ASC
-`

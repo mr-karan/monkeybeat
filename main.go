@@ -9,24 +9,18 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/zerodha/logf"
 )
 
 var (
 	// Version and date of the build. This is injected at build-time.
 	buildString = "unknown"
-	//go:embed assets/*
-	assetsDir embed.FS
+	//go:embed static/*
+	staticDir embed.FS
+	//go:embed queries.sql
+	sqlFiles embed.FS
 )
-
-type App struct {
-	lo  logf.Logger
-	tpl *template.Template
-	db  driver.Conn
-}
 
 func main() {
 	// Initialise and load the config.
@@ -41,15 +35,22 @@ func main() {
 	}
 	app.lo.Info("booting monkeybeat", "version", buildString)
 
-	// Initialise clickhouse.
+	// Initialise clickhouse DB connection.
 	db, err := initClickhouse(ko)
 	if err != nil {
 		app.lo.Fatal("couldn't initialise clickhouse connection", "error", err)
 	}
 	app.db = db
+	defer app.db.Close()
+
+	queries, err := initQueries(sqlFiles)
+	if err != nil {
+		app.lo.Fatal("couldn't initialise queries", "error", err)
+	}
+	app.queries = queries
 
 	// Load HTML templates.
-	tpl, err := template.ParseFS(assetsDir, "assets/*.html")
+	tpl, err := template.ParseFS(staticDir, "static/*.html")
 	if err != nil {
 		app.lo.Fatal("couldn't load html templates", "error", err)
 	}
@@ -63,9 +64,9 @@ func main() {
 	// Frontend Handlers.
 	r.Get("/", wrap(app, handleIndex))
 	r.Get("/portfolio", wrap(app, handlePortfolio))
-	assets, _ := fs.Sub(assetsDir, "assets")
-	r.Get("/assets/*", func(w http.ResponseWriter, r *http.Request) {
-		fs := http.StripPrefix("/assets/", http.FileServer(http.FS(assets)))
+	static, _ := fs.Sub(staticDir, "static")
+	r.Get("/static/*", func(w http.ResponseWriter, r *http.Request) {
+		fs := http.StripPrefix("/static/", http.FileServer(http.FS(static)))
 		fs.ServeHTTP(w, r)
 	})
 

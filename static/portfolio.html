@@ -1,0 +1,80 @@
+{{ define "portfolio" }}
+    {{ template "header" .}}
+    <section class="summary">
+        <h3>Summary</h3>
+        <table>
+            <tr>
+                <th>Name</th>
+                <th>6M</th>
+                <th>1Y</th>
+                <th>3Y</th>
+            </tr>
+            <tr>
+                <td>Porfolio</td>
+                <td>{{ .AvgPorfolio6M }}</td>
+                <td>{{ .AvgPorfolio1Y }}</td>
+                <td>{{ .AvgPorfolio3Y }}</td>
+            </tr>
+            <tr>
+                <td>NIFTY500</td>
+                <td>{{ .AvgIndex6M }}</td>
+                <td>{{ .AvgIndex1Y }}</td>
+                <td>{{ .AvgIndex3Y }}</td>
+            </tr>
+        </table>
+    </section>
+    <section class="chart">
+        <div style="width: 800px;">
+            <canvas id="line-chart" width="400" height="450"></canvas>
+        </div>
+    </section>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // const ctx = document.getElementById('myChart');
+
+    var returns_data = []
+
+    {{ range .DailyReturns}}
+    returns_data.push({
+        x: "{{.Date}}",
+        y: "{{.CurrentInvested}}"
+    });
+    {{ end}}
+
+    new Chart(document.getElementById("line-chart"), {
+        type: 'line',
+        data: {
+            datasets: [{
+                data: returns_data,
+                label: "Portfolio",
+                borderColor: "#3e95cd",
+                fill: false
+            }
+            ]
+        },
+        options: {
+            responsive: true,
+            title: {
+                display: true,
+                text: 'World population per region (in millions)'
+            },
+            scales: {
+					xAxes: [{
+						type: 'time',
+						time: {
+							unit: 'month',
+						},
+					}],
+					yAxes: [{
+						display: true,
+						scaleLabel: {
+							display: true,
+							labelString: 'value'
+						}
+					}]
+				}
+        }
+    });
+</script>
+    {{ template "footer" .}}
+{{ end }}

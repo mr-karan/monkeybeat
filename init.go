@@ -3,15 +3,19 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"time"
 
-	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	"github.com/zerodha/logf"
 
 	"os"
 	"strings"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
+	goyesqlx "github.com/knadh/goyesql/v2/sqlx"
+
+	"github.com/knadh/goyesql/v2"
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/parsers/toml"
 	"github.com/knadh/koanf/providers/env"
@@ -77,6 +81,31 @@ func initClickhouse(ko *koanf.Koanf) (driver.Conn, error) {
 	}
 
 	return conn, nil
+}
+
+// initQueries loads named SQL queries from the queries file.
+func initQueries(f fs.FS) (*queries, error) {
+	// Load SQL queries.
+	qFile, err := fs.ReadFile(f, "queries.sql")
+	if err != nil {
+		return nil, fmt.Errorf("error reading db queries: %v", err)
+	}
+
+	qMap, err := goyesql.ParseBytes(qFile)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing SQL queries: %w", err)
+	}
+
+	// Load them to a struct.
+	// It doesn't prepare them as it's not needed here and additionally
+	// Clickhouse requires all prepared queries to be sent to DB so it's
+	// not straightforward to do with goyesql for CH driver.
+	var q queries
+	if err := goyesqlx.ScanToStruct(&q, qMap, nil); err != nil {
+		return nil, fmt.Errorf("error preparing SQL queries: %w", err)
+	}
+
+	return &q, nil
 }
 
 // initLogger initializes logger instance.

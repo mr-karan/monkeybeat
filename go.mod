@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.3.0
 	github.com/go-chi/chi/v5 v5.0.7
+	github.com/knadh/goyesql/v2 v2.1.2
 	github.com/knadh/koanf v1.4.4
 	github.com/spf13/pflag v1.0.5
 	github.com/zerodha/logf v0.5.5
@@ -17,6 +18,7 @@ require (
 	github.com/go-faster/city v1.0.1 // indirect
 	github.com/go-faster/errors v0.6.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
+	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/klauspost/compress v1.15.9 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
