@@ -2,10 +2,9 @@ package main
 
 import (
 	"context"
-	"text/template"
+	"html/template"
 
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
-
 	"github.com/zerodha/logf"
 )
 
@@ -37,31 +36,18 @@ type Returns struct {
 	Percent float64 `ch:"return_percent" json:"percent"`
 }
 
+// ReturnsPeriod computes average returns for all stocks/indices for various time periods.
+type ReturnsPeriod map[int][]Returns
+
+type AvgStockReturns map[string]map[int]float64
+
 // DailyReturns computes the returns for the entire portfolio for each date since beginning till current date.
 type DailyReturns struct {
-	Date            string  `ch:"date"`
+	Date            string  `ch:"close_date"`
 	CurrentInvested float64 `ch:"current_invested"`
 	PresentClose    float64 `ch:"present_close"`
 	InitalClose     float64 `ch:"initial_close"`
 	PercentDiff     float64 `ch:"percent_diff"`
-}
-
-// ReturnsPeriod computes average returns for all stocks/indices for various time periods.
-type ReturnsPeriod map[int][]Returns
-
-// AvgReturns computes average returns for portfolio or index for various time periods.
-type AvgReturns struct {
-	AvgPorfolio1M float64 `json:"avg_port_1m"`
-	AvgPorfolio3M float64 `json:"avg_port_3m"`
-	AvgPorfolio6M float64 `json:"avg_port_6m"`
-	AvgPorfolio1Y float64 `json:"avg_port_1y"`
-	AvgPorfolio3Y float64 `json:"avg_port_3y"`
-
-	AvgIndex1M float64 `json:"avg_ind_1m"`
-	AvgIndex3M float64 `json:"avg_ind_3m"`
-	AvgIndex6M float64 `json:"avg_ind_6m"`
-	AvgIndex1Y float64 `json:"avg_ind_1y"`
-	AvgIndex3Y float64 `json:"avg_ind_3y"`
 }
 
 // getRandomStocks Generates a random portfolio of stocks for a given count.
@@ -93,9 +79,9 @@ func (app *App) getReturns(table string, days int, stocks []string) ([]Returns, 
 }
 
 // Fetch current investment amount for each date since beginning to show overall amount.
-func (app *App) getDailyValue(stocks []string, amount int) ([]DailyReturns, error) {
+func (app *App) getDailyValue(stocks []string, amount int, days int) ([]DailyReturns, error) {
 	returns := make([]DailyReturns, 0)
-	if err := app.db.Select(context.Background(), &returns, app.queries.GetDailyValue, stocks, amount); err != nil {
+	if err := app.db.Select(context.Background(), &returns, app.queries.GetDailyValue, stocks, amount, days); err != nil {
 		return nil, err
 	}
 	return returns, nil

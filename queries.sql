@@ -44,8 +44,9 @@ INNER JOIN new ON old.tradingsymbol = new.tradingsymbol
 -- Fetch the daily returns by computing the close price each day and fetching the percentage difference from starting date.
 -- $1: stocks
 -- $2: amount_invested
+-- $3: days
 SELECT
-formatDateTime(toDate(date), '%F') AS date,
+formatDateTime(toDate(date), '%F') AS close_date,
 SUM(close) AS present_close,
 (
 	SELECT SUM(close) AS close
@@ -56,8 +57,8 @@ SUM(close) AS present_close,
 	LIMIT 1
 ) AS initial_close,
 (100. * (present_close - initial_close)) / initial_close AS percent_diff,
-$2 + ((percent_diff / 100) * $2) AS current_invested
+$2 + ((percent_diff / 100) *$2) AS current_invested
 FROM monkeybeat.prices
-WHERE (tradingsymbol IN ($1))
-GROUP BY date
-ORDER BY date ASC
+WHERE (tradingsymbol IN ($1)) AND date >= today() - INTERVAL $3 DAY
+GROUP BY close_date
+ORDER BY close_date ASC

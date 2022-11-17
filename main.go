@@ -3,10 +3,11 @@ package main
 import (
 	"embed"
 	"fmt"
+	"html/template"
 	"io/fs"
 	"net/http"
 	"os"
-	"text/template"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -50,7 +51,22 @@ func main() {
 	app.queries = queries
 
 	// Load HTML templates.
-	tpl, err := template.ParseFS(staticDir, "static/*.html")
+	funcMap := template.FuncMap{
+		"FormatNumber": func(value float64) string {
+			return fmt.Sprintf("%.2f%"+"%", value)
+		},
+		"Color": func(val string) string {
+			color := "green"
+			if strings.HasPrefix(val, "-") {
+				color = "red"
+			}
+			return fmt.Sprintf("<span class=%s>%s</span>", color, val)
+		},
+		"SafeHTML": func(val string) template.HTML {
+			return template.HTML(val)
+		},
+	}
+	tpl, err := template.New("static").Funcs(funcMap).ParseFS(staticDir, "static/*.html")
 	if err != nil {
 		app.lo.Fatal("couldn't load html templates", "error", err)
 	}

@@ -56,7 +56,7 @@ def main():
     download([NIFTY500_SYMBOL], True, INDEX_DATA_OUTPUT_FILE)
 
 
-def download(symbols, is_index, filename):
+def download(symbols: str, is_index: bool, filename: str):
     # Append data of all stocks to this list.
     df_list = list()
 
@@ -74,7 +74,7 @@ def download(symbols, is_index, filename):
             interval="1d",
             auto_adjust=True,
         )
-        data["ticker"] = ticker
+        data["ticker"] = cleanup_name(ticker)
         data["segment"] = "EQ"
         if is_index:
             data["segment"] = "INDEX"
@@ -85,6 +85,12 @@ def download(symbols, is_index, filename):
 
     # Save to csv.
     df.to_csv(path.join(args.dir, filename))
+
+
+def cleanup_name(ticker: str) -> str:
+    ticker = ticker.removeprefix("^")
+    ticker = ticker.removesuffix(".NS")
+    return ticker
 
 
 if __name__ == "__main__":

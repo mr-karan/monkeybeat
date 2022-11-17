@@ -3,19 +3,17 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
 // portfolioTpl is used to represent the data which is used to render
 // portfolio web view.
 type portfolioTpl struct {
-	DailyReturns        []DailyReturns
-	PortfolioReturns    ReturnsPeriod
-	IndexReturns        ReturnsPeriod
-	AvgStockReturns     map[string]float64
-	AvgIndexReturns     map[int]float64
-	AvgPortfolioReturns map[int]float64
+	DailyPortfolioReturns []DailyReturns
+	DailyIndexReturns     []DailyReturns
+	AvgStockReturns       AvgStockReturns
+	AvgIndexReturns       map[int]float64
+	AvgPortfolioReturns   map[int]float64
 }
 
 // wrap is a middleware that wraps HTTP handlers and injects the "app" context.
@@ -78,13 +76,14 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 // handlePortfolio serves the portfolio page.
 func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 	var (
-		app                 = r.Context().Value("app").(*App)
-		portfolio           = make(ReturnsPeriod, 0)
-		index               = make(ReturnsPeriod, 0)
-		avgStockReturns     = make(map[string]float64, 0)
-		avgPortfolioReturns = make(map[int]float64, 0)
-		avgIndexReturns     = make(map[int]float64, 0)
-		dailyReturns        = make([]DailyReturns, 0)
+		app                   = r.Context().Value("app").(*App)
+		portfolio             = make(ReturnsPeriod, 0)
+		index                 = make(ReturnsPeriod, 0)
+		avgStockReturns       = make(AvgStockReturns, 0)
+		avgPortfolioReturns   = make(map[int]float64, 0)
+		avgIndexReturns       = make(map[int]float64, 0)
+		dailyPortfolioReturns = make([]DailyReturns, 0)
+		dailyIndexReturns     = make([]DailyReturns, 0)
 	)
 
 	// Fetch a list of stocks from DB.
@@ -109,13 +108,17 @@ func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 
 		// Add individual stock returns.
 		for _, s := range returns {
-			avgStockReturns[fmt.Sprintf("%s_%d", s.Symbol, days)] = s.Percent
+			if val, ok := avgStockReturns[s.Symbol]; ok {
+				val[days] = s.Percent
+			} else {
+				avgStockReturns[s.Symbol] = map[int]float64{days: s.Percent}
+			}
 		}
 	}
 
 	// Fetch index returns for various time periods.
 	for _, days := range returnPeriods {
-		returns, err := app.getIndexReturns(stocks, days)
+		returns, err := app.getIndexReturns([]string{N500_SYMBOL}, days)
 		if err != nil {
 			app.lo.Error("error fetching index returns", "error", err)
 			sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
@@ -126,7 +129,13 @@ func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch the daily returns.
-	dailyReturns, err = app.getDailyValue(stocks, 10000)
+	dailyPortfolioReturns, err = app.getDailyValue(stocks, 10000, 1080)
+	if err != nil {
+		app.lo.Error("error fetching daily returns", "error", err)
+		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
+		return
+	}
+	dailyIndexReturns, err = app.getDailyValue([]string{N500_SYMBOL}, 10000, 1080)
 	if err != nil {
 		app.lo.Error("error fetching daily returns", "error", err)
 		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
@@ -134,11 +143,10 @@ func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app.tpl.ExecuteTemplate(w, "portfolio", portfolioTpl{
-		DailyReturns:        dailyReturns,
-		PortfolioReturns:    portfolio,
-		IndexReturns:        index,
-		AvgStockReturns:     avgStockReturns,
-		AvgIndexReturns:     avgIndexReturns,
-		AvgPortfolioReturns: avgPortfolioReturns,
+		DailyPortfolioReturns: dailyPortfolioReturns,
+		DailyIndexReturns:     dailyIndexReturns,
+		AvgStockReturns:       avgStockReturns,
+		AvgIndexReturns:       avgIndexReturns,
+		AvgPortfolioReturns:   avgPortfolioReturns,
 	})
 }

@@ -1,6 +1,6 @@
 :root {
     --primary: #386641;
-    --secondary: #ffc300;
+    --secondary: #222;
     --light: #999;
 }
 
@@ -18,6 +18,7 @@ body {
 
 body {
     font-family: "Fira Sans", sans-serif;
+    color: var(--secondary);
 }
 
 h1 {
@@ -33,4 +34,117 @@ a {
 
 a:hover {
     color: var(--secondary);
+}
+
+.container {
+    max-width: 800px;
+    margin: 60px auto 0 auto;
+}
+
+button,
+input {
+    padding: 1rem;
+    margin-top: 2rem;
+    border: none
+}
+
+button {
+    background: #ffac33;
+    border-radius: 50px;
+    color: #fff;
+    cursor: pointer;
+    width: 50%;
+    align-self: center;
+    display: -moz-box;
+    display: flex;
+    -moz-box-pack: center;
+    justify-content: center
+}
+
+button:disabled,
+button[disabled] {
+    background-color: #efae6c
+}
+
+table {
+    border: 1px solid #ccc;
+    border-collapse: collapse;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+table tr {
+    border: 1px solid #ddd;
+    padding: 5px;
+}
+
+table th,
+table td {
+    padding: 10px;
+    text-align: center;
+}
+
+table th {
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.red {
+    color: #ff433d;
+}
+
+.green {
+    color: #1ecd93;
+}
+
+@media(max-width: 700px) {
+
+    html,
+    body {
+        font-size: 15px;
+        line-height: 24px;
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    .container {
+        padding: 20px;
+        margin: 0;
+    }
+
+    table {
+        border: 0;
+    }
+
+    table thead {
+        display: none;
+    }
+
+    table tr {
+        border-bottom: 2px solid #ddd;
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    table td {
+        border-bottom: 1px dotted #ccc;
+        display: block;
+        font-size: 13px;
+        text-align: right;
+    }
+
+    table td:last-child {
+        border-bottom: 0;
+    }
+
+    table td:before {
+        content: attr(data-label);
+        float: left;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
 }
