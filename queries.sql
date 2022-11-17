@@ -6,15 +6,14 @@ SELECT groupArraySample($1)(tradingsymbol) AS stocks FROM monkeybeat.prices WHER
 
 -- name: get-returns
 -- Get average returns for given date and given list of stocks.
--- $1: table
--- $2: date
--- $3: symbols
+-- $1: date
+-- $2: symbols
 WITH
 start AS (
-	SELECT date FROM monkeybeat.prices WHERE toDate(date)>=today() - INTERVAL $2 DAY ORDER BY date ASC LIMIT 1
+	SELECT date FROM monkeybeat.prices WHERE toDate(date)>=today() - INTERVAL $1 DAY ORDER BY date ASC LIMIT 1
 ),
 end AS (
-	SELECT date FROM monkeybeat.prices WHERE toDate(date)>=today() - INTERVAL $2 DAY ORDER BY date DESC LIMIT 1
+	SELECT date FROM monkeybeat.prices WHERE toDate(date)>=today() - INTERVAL $1 DAY ORDER BY date DESC LIMIT 1
 ),
 old AS
 (
@@ -23,7 +22,7 @@ old AS
 		tradingsymbol
 	FROM monkeybeat.prices AS sp
 	INNER JOIN start ON sp.date = start.date
-	WHERE (tradingsymbol IN ($3))
+	WHERE (tradingsymbol IN ($2))
 ),
 new AS
 (
@@ -32,7 +31,7 @@ new AS
 		tradingsymbol
 	FROM monkeybeat.prices AS sp
 	INNER JOIN end ON sp.date = end.date
-	WHERE (tradingsymbol IN ($3))
+	WHERE (tradingsymbol IN ($2))
 )
 SELECT
 new.tradingsymbol AS symbol,
@@ -45,20 +44,39 @@ INNER JOIN new ON old.tradingsymbol = new.tradingsymbol
 -- $1: stocks
 -- $2: amount_invested
 -- $3: days
+-- $4: normalization_factor
+WITH
+    initial AS
+    (
+        SELECT
+            tradingsymbol,
+            $4 / close AS multiplier,
+            close
+        FROM monkeybeat.prices
+        WHERE (tradingsymbol IN ($1)) AND (date = (
+            SELECT date
+            FROM monkeybeat.prices
+            WHERE date >= (today() - toIntervalDay($3))
+            ORDER BY date ASC
+            LIMIT 1
+        ))
+    ),
+    present AS
+    (
+        SELECT
+            date,
+            tradingsymbol,
+            close
+        FROM monkeybeat.prices
+        WHERE (tradingsymbol IN ($1)) AND (date >= (today() - toIntervalDay($3)))
+        ORDER BY date ASC
+    )
 SELECT
-formatDateTime(toDate(date), '%F') AS close_date,
-SUM(close) AS present_close,
-(
-	SELECT SUM(close) AS close
-	FROM monkeybeat.prices
-	WHERE (tradingsymbol IN ($1))
-	GROUP BY date
-	ORDER BY date ASC
-	LIMIT 1
-) AS initial_close,
-(100. * (present_close - initial_close)) / initial_close AS percent_diff,
-$2 + ((percent_diff / 100) *$2) AS current_invested
-FROM monkeybeat.prices
-WHERE (tradingsymbol IN ($1)) AND date >= today() - INTERVAL $3 DAY
+    formatDateTime(toDate(present.date), '%F') AS close_date,
+    SUM(initial.multiplier * present.close) AS normalized_close,
+    ((normalized_close / ($4 * count(present.tradingsymbol))) - 1) * 100 AS return_percent,
+	$2 + ((return_percent / 100) *10000) AS current_invested
+FROM initial
+INNER JOIN present ON initial.tradingsymbol = present.tradingsymbol
 GROUP BY close_date
 ORDER BY close_date ASC

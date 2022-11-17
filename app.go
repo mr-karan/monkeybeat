@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	STOCKS_COUNT = 10        // Number of stocks to add in a portfolio.
-	N500_SYMBOL  = "^CRSLDX" // Index symbol.
+	STOCKS_COUNT         = 10        // Number of stocks to add in a portfolio.
+	N500_SYMBOL          = "^CRSLDX" // Index symbol.
+	NORMALIZATION_FACTOR = 100
 )
 
 var (
@@ -45,9 +46,8 @@ type AvgStockReturns map[string]map[int]float64
 type DailyReturns struct {
 	Date            string  `ch:"close_date"`
 	CurrentInvested float64 `ch:"current_invested"`
-	PresentClose    float64 `ch:"present_close"`
-	InitalClose     float64 `ch:"initial_close"`
-	PercentDiff     float64 `ch:"percent_diff"`
+	NormalizedClose float64 `ch:"normalized_close"`
+	ReturnPercent   float64 `ch:"return_percent"`
 }
 
 // getRandomStocks Generates a random portfolio of stocks for a given count.
@@ -61,17 +61,17 @@ func (app *App) getRandomStocks(count int) ([]string, error) {
 
 // getPortfolioReturns fetches return percent for a given list of stocks and the given time period (in days).
 func (app *App) getPortfolioReturns(stocks []string, days int) ([]Returns, error) {
-	return app.getReturns("stocks", days, stocks)
+	return app.getReturns(days, stocks)
 }
 
 // getIndexReturns fetches return percent for a given list of indices and the given time period (in days).
 func (app *App) getIndexReturns(indices []string, days int) ([]Returns, error) {
-	return app.getReturns("index", days, indices)
+	return app.getReturns(days, indices)
 }
 
-func (app *App) getReturns(table string, days int, stocks []string) ([]Returns, error) {
+func (app *App) getReturns(days int, stocks []string) ([]Returns, error) {
 	returns := make([]Returns, 0)
-	if err := app.db.Select(context.Background(), &returns, app.queries.GetReturns, table, days, stocks); err != nil {
+	if err := app.db.Select(context.Background(), &returns, app.queries.GetReturns, days, stocks); err != nil {
 		return nil, err
 	}
 	return returns, nil
@@ -81,7 +81,7 @@ func (app *App) getReturns(table string, days int, stocks []string) ([]Returns, 
 // Fetch current investment amount for each date since beginning to show overall amount.
 func (app *App) getDailyValue(stocks []string, amount int, days int) ([]DailyReturns, error) {
 	returns := make([]DailyReturns, 0)
-	if err := app.db.Select(context.Background(), &returns, app.queries.GetDailyValue, stocks, amount, days); err != nil {
+	if err := app.db.Select(context.Background(), &returns, app.queries.GetDailyValue, stocks, amount, days, NORMALIZATION_FACTOR); err != nil {
 		return nil, err
 	}
 	return returns, nil
