@@ -17,13 +17,24 @@ body {
 }
 
 body {
-    font-family: "Fira Sans", sans-serif;
+    font-family: "Lato", sans-serif;
     color: var(--secondary);
+    background-color: #f9f9ed;
+}
+
+header p {
+    text-align: center;
 }
 
 h1 {
     font-size: 3rem;
     line-height: 2.4rem;
+}
+
+h3 {
+    font-size: 1.5rem;
+    border-bottom: 2px solid #222;
+    padding-bottom: 5px;
 }
 
 a {
@@ -39,26 +50,39 @@ a:hover {
 .container {
     max-width: 800px;
     margin: 60px auto 0 auto;
+    position: relative;
+    min-height: 90vh;
 }
 
-button,
-input {
-    padding: 1rem;
+main {
+    padding-bottom: 3rem;
+}
+
+section {
+    margin-bottom: 45px;
+}
+
+section:last-child {
+    margin-bottom: 0;
+}
+
+.btn-generate {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-top: 2rem;
-    border: none
+    margin-bottom: 2rem;
 }
 
 button {
-    background: #ffac33;
-    border-radius: 50px;
+    border: none;
+    padding: 1rem;
+    font-size: 1rem;
+    background: #fbb02d;
+    border-radius: 25px;
     color: #fff;
     cursor: pointer;
-    width: 50%;
-    align-self: center;
-    display: -moz-box;
-    display: flex;
-    -moz-box-pack: center;
-    justify-content: center
+    width: 35%;
 }
 
 button:disabled,
@@ -72,6 +96,10 @@ table {
     margin: 0;
     padding: 0;
     width: 100%;
+}
+
+table thead {
+    background: #95d5b2;
 }
 
 table tr {
@@ -98,6 +126,28 @@ table th {
 .green {
     color: #1ecd93;
 }
+
+footer {
+    margin: 60px 0 0 0;
+    text-align: center;
+    width: 100%;
+    min-height: 2rem;
+}
+
+footer a {
+    text-decoration: none;
+    color: #222;
+}
+
+footer span {
+    color: var(--primary);
+}
+
+.disclaimer {
+    color: #9b9b9b;
+    font-size: 0.75rem;
+}
+
 
 @media(max-width: 700px) {
 

@@ -9,11 +9,13 @@ import (
 // portfolioTpl is used to represent the data which is used to render
 // portfolio web view.
 type portfolioTpl struct {
-	DailyPortfolioReturns []DailyReturns
-	DailyIndexReturns     []DailyReturns
-	AvgStockReturns       AvgStockReturns
-	AvgIndexReturns       map[int]float64
-	AvgPortfolioReturns   map[int]float64
+	DailyPortfolioReturns  []DailyReturns
+	DailyIndexReturns      []DailyReturns
+	AvgStockReturns        AvgStockReturns
+	AvgIndexReturns        map[int]float64
+	AvgPortfolioReturns    map[int]float64
+	CurrentPortfolioAmount int64
+	CurrentIndexAmount     int64
 }
 
 // wrap is a middleware that wraps HTTP handlers and injects the "app" context.
@@ -128,25 +130,33 @@ func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 		avgIndexReturns[days] = computeAvg(returns)
 	}
 
-	// Fetch the daily returns.
-	dailyPortfolioReturns, err = app.getDailyValue(stocks, 10000, 1080)
+	// Fetch the daily returns over 3 years.
+	dailyPortfolioReturns, err = app.getDailyValue(stocks, 1080)
 	if err != nil {
 		app.lo.Error("error fetching daily returns", "error", err)
 		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
 		return
 	}
-	dailyIndexReturns, err = app.getDailyValue([]string{N500_SYMBOL}, 10000, 1080)
+	dailyIndexReturns, err = app.getDailyValue([]string{N500_SYMBOL}, 1080)
 	if err != nil {
 		app.lo.Error("error fetching daily returns", "error", err)
 		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
 		return
 	}
 
+	if len(dailyIndexReturns) == 0 || len(dailyPortfolioReturns) == 0 {
+		app.lo.Error("error fetching daily returns", "error", err)
+		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
+		return
+	}
+
 	app.tpl.ExecuteTemplate(w, "portfolio", portfolioTpl{
-		DailyPortfolioReturns: dailyPortfolioReturns,
-		DailyIndexReturns:     dailyIndexReturns,
-		AvgStockReturns:       avgStockReturns,
-		AvgIndexReturns:       avgIndexReturns,
-		AvgPortfolioReturns:   avgPortfolioReturns,
+		DailyPortfolioReturns:  dailyPortfolioReturns,
+		DailyIndexReturns:      dailyIndexReturns,
+		AvgStockReturns:        avgStockReturns,
+		AvgIndexReturns:        avgIndexReturns,
+		AvgPortfolioReturns:    avgPortfolioReturns,
+		CurrentPortfolioAmount: int64(dailyPortfolioReturns[len(dailyPortfolioReturns)-1].CurrentInvested),
+		CurrentIndexAmount:     int64(dailyIndexReturns[len(dailyIndexReturns)-1].CurrentInvested),
 	})
 }

@@ -41,6 +41,7 @@ INNER JOIN new ON old.tradingsymbol = new.tradingsymbol
 
 -- name: get-daily-value
 -- Fetch the daily returns by computing the close price each day and fetching the percentage difference from starting date.
+-- The starting amount of each stock is set as $4 (normalization_factor). The closing price each day is computed by factoring in $4.
 -- $1: stocks
 -- $2: amount_invested
 -- $3: days

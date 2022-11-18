@@ -14,31 +14,40 @@
     <meta name="keywords" content="stocks,returns,equity,portfolio,nifty500,nifty">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 
 <body>
-    <div class="container wrap">
+    <div class="container">
         <header>
-            <h1><a href="/">MonkeyBeat.market</a></h1>
-            <p>Generate a random portfolio from NIFTY 500 list of stocks and see if it beats the markets!</p>
+            <h1><a href="/">MonkeyBeat</a></h1>
+            <p>Can an equi-weighted portfolio of 10 stocks randomly selected from the NIFTY500 universe beat the markets?</p>
         </header>
         <main>
-            <div class="generate">
+            <section class="generate">
                 <form method="get" action="/portfolio">
-                    <button type="submit">Generate Portfolio</button>
+                    <div class="btn-generate">
+                        <button type="submit">Find Out</button>
+                    </div>
                 </form>
-            </div>    
+            </section>
         </main>
 {{ end }}
 
 {{ define "footer" }}
         <footer class="footer">
-            Made by Karan
+            <p>Made with <span>&#9829;</span> by <a href="https://mrkaran.dev"><strong>mrkaran</strong></a></p>
+            <p><a href="https://github.com/mr-karan/monkeybeat">Source Code</a></p>
+            <p class="disclaimer">This tool is only used for stimulating a random portfolio and should not be misconstrued for financial or investment advise.<br/>No guarantees are provided on the accuracy of any data or calculations.
+            </p>
         </footer>
     </div>
 </body>
 
 </html>
 {{ end }}
+
+<p>
+    </div>
+    </footer>

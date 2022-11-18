@@ -32,9 +32,23 @@
     </table>
 </section>
 
+<section class="chart">
+  <h3>Amount Invested</h3>
+  <p>Present value of ₹ 10000 invested 3 years back</p>
+  <ul>
+    <li>
+      Portfolio: ₹ {{.CurrentPortfolioAmount}}
+    </li>
+    <li>
+      NIFTY500: ₹ {{.CurrentIndexAmount}}
+    </li>
+  </ul>
+  <div id="chart"></div>
+</section>
+
 <section class="detail">
-    <h3>Portfolio</h3>
-    <table>
+  <h3>Porfolio</h3>
+  <table>
         <thead>
             <tr>
                 <th>Stock</th>
@@ -60,79 +74,74 @@
     </table>
 </section>
 
-<section class="chart">
-    <h2>Amount Invested</h2>
-    <p>If you'd invested Rs 10000 3 years back it would be worth Rs</p>
-    <div style="width: 800px;">
-        <div id="chart" width="400" height="450"></div>
-    </div>
-</section>
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script>
 
-var portfolio_returns_prices = []
-var index_returns_prices = []
-var dates = []
+var dates = [
+  {{range .DailyPortfolioReturns}}
+    {{.Date}},
+  {{end}}
+];
 
-    {{ range.DailyPortfolioReturns }}
-    dates.push({{.Date }})
-    portfolio_returns_prices.push({{.CurrentInvested }})
-{{ end }}
+var portfolio_returns_prices = [
+  {{range .DailyPortfolioReturns}}
+    {{.CurrentInvested}},
+  {{end}}
+];
 
-{{ range.DailyIndexReturns }}
-    index_returns_prices.push({{.CurrentInvested }})
-{{ end }}
+var index_returns_prices = [
+  {{range .DailyIndexReturns}}
+    {{.CurrentInvested}},
+  {{end}}
+];
 
-
-
-        var options = {
-          series: [{
-          name: "Portfolio",
-          data: portfolio_returns_prices
-        },{
-            name: "NIFTY500",
-            data: index_returns_prices
-        }],
-          chart: {
-          type: 'area',
-          height: 350,
-          zoom: {
+var options = {
+    series: [{
+        name: "Portfolio",
+        data: portfolio_returns_prices
+    }, {
+        name: "NIFTY500",
+        data: index_returns_prices
+    }],
+    chart: {
+        type: 'area',
+        height: 350,
+        zoom: {
             enabled: false
-          }
-        },
-        dataLabels: {
-          enabled: false
-        },
-        stroke: {
-          curve: 'smooth'
-        },
-        
-        title: {
-          text: 'Value of Rs 10000 invested',
-          align: 'left'
-        },
-        subtitle: {
-          text: 'Price Movements',
-          align: 'centre'
-        },
-        labels: dates,
-        xaxis: {
-          type: 'datetime',
-        },
-        yaxis: {
-            decimalsInFloat:0,
-          opposite: true,
-          title: {
-            text: 'Value'
-          },
-        },
-        legend: {
-          horizontalAlign: 'left'
         }
-        };
+    },
+    dataLabels: {
+        enabled: false
+    },
+    stroke: {
+        curve: 'smooth'
+    },
+    title: {
+        text: 'Value of ₹ 10000 invested',
+        align: 'left'
+    },
+    subtitle: {
+        text: 'Price Movements',
+        align: 'centre'
+    },
+    labels: dates,
+    xaxis: {
+        type: 'datetime',
+    },
+    yaxis: {
+        decimalsInFloat: 0,
+        opposite: true,
+        title: {
+            text: 'Value'
+        },
+    },
+    legend: {
+        horizontalAlign: 'left'
+    }
+};
 
-        var chart = new ApexCharts(document.querySelector("#chart"), options);
-        chart.render();
+var chart = new ApexCharts(document.querySelector("#chart"), options);
+chart.render();
 
 </script>
 {{ template "footer" .}}

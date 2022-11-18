@@ -180,3 +180,4 @@ config.toml
 bin/
 data/
 dist/
+deploy.sh

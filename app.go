@@ -9,12 +9,15 @@ import (
 )
 
 const (
-	STOCKS_COUNT         = 10        // Number of stocks to add in a portfolio.
-	N500_SYMBOL          = "^CRSLDX" // Index symbol.
-	NORMALIZATION_FACTOR = 100
+	STOCKS_COUNT         = 10       // Number of stocks to add in a portfolio.
+	N500_SYMBOL          = "CRSLDX" // Index symbol.
+	NORMALIZATION_FACTOR = 100      // Factor to scale the inital price of each stock to calculate daily returns.
+	PORTFOLIO_AMOUNT     = 10000    // Hypothetical starting amount invested in the portfolio.
 )
 
 var (
+	// Time periods in days to calculate returns.
+	// NOTE: If the values are changed here, they must be updated in HTML templates as well.
 	returnPeriods = []int{30, 180, 360, 1080}
 )
 
@@ -40,6 +43,7 @@ type Returns struct {
 // ReturnsPeriod computes average returns for all stocks/indices for various time periods.
 type ReturnsPeriod map[int][]Returns
 
+// AvgStockReturns is a map of each stock with returns in different time periods.
 type AvgStockReturns map[string]map[int]float64
 
 // DailyReturns computes the returns for the entire portfolio for each date since beginning till current date.
@@ -79,9 +83,9 @@ func (app *App) getReturns(days int, stocks []string) ([]Returns, error) {
 }
 
 // Fetch current investment amount for each date since beginning to show overall amount.
-func (app *App) getDailyValue(stocks []string, amount int, days int) ([]DailyReturns, error) {
+func (app *App) getDailyValue(stocks []string, days int) ([]DailyReturns, error) {
 	returns := make([]DailyReturns, 0)
-	if err := app.db.Select(context.Background(), &returns, app.queries.GetDailyValue, stocks, amount, days, NORMALIZATION_FACTOR); err != nil {
+	if err := app.db.Select(context.Background(), &returns, app.queries.GetDailyValue, stocks, PORTFOLIO_AMOUNT, days, NORMALIZATION_FACTOR); err != nil {
 		return nil, err
 	}
 	return returns, nil
