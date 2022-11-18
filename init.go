@@ -59,7 +59,7 @@ func initConfig() (*koanf.Koanf, error) {
 	return ko, nil
 }
 
-// initClickhouse initialises clickhouse conncetion using the native interface.
+// initClickhouse initialises clickhouse connection using the native interface.
 func initClickhouse(ko *koanf.Koanf) (driver.Conn, error) {
 	conn, err := clickhouse.Open(&clickhouse.Options{
 		Addr:        []string{fmt.Sprintf("%s:%d", ko.String("db.host"), ko.Int("db.port"))},
