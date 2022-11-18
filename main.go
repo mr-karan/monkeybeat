@@ -80,6 +80,8 @@ func main() {
 	// Frontend Handlers.
 	r.Get("/", wrap(app, handleIndex))
 	r.Get("/portfolio", wrap(app, handlePortfolio))
+	r.Get("/portfolio/{seed}", wrap(app, handlePortfolio))
+
 	static, _ := fs.Sub(staticDir, "static")
 	r.Get("/static/*", func(w http.ResponseWriter, r *http.Request) {
 		fs := http.StripPrefix("/static/", http.FileServer(http.FS(static)))

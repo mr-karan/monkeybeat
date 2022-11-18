@@ -15,7 +15,7 @@
         </thead>
         <tbody>
             <tr>
-                <td data-label="Name">Porfolio</td>
+                <td data-label="Name">Portfolio</td>
                 <td data-label="1M">{{ index .AvgPortfolioReturns 30 | FormatNumber | Color | SafeHTML}}</td>
                 <td data-label="6M">{{ index .AvgPortfolioReturns 180 | FormatNumber | Color | SafeHTML}}</td>
                 <td data-label="1Y">{{ index .AvgPortfolioReturns 360 | FormatNumber | Color | SafeHTML}}</td>
@@ -30,6 +30,8 @@
             </tr>
         </tbody>
     </table>
+    <br/>
+    <a class="share" href="/portfolio/{{ .Seed }}">&#x1F517; Share this portfolio</a>
 </section>
 
 <section class="chart">

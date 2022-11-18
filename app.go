@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"html/template"
+	"math/rand"
 
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	"github.com/zerodha/logf"
@@ -13,6 +14,7 @@ const (
 	N500_SYMBOL          = "CRSLDX" // Index symbol.
 	NORMALIZATION_FACTOR = 100      // Factor to scale the inital price of each stock to calculate daily returns.
 	PORTFOLIO_AMOUNT     = 10000    // Hypothetical starting amount invested in the portfolio.
+	MAX_SEED             = 1000000
 )
 
 var (
@@ -55,12 +57,20 @@ type DailyReturns struct {
 }
 
 // getRandomStocks Generates a random portfolio of stocks for a given count.
-func (app *App) getRandomStocks(count int) ([]string, error) {
+func (app *App) getRandomStocks(count int) ([]string, int, error) {
+	// generate random seed
+	seed := rand.Intn(MAX_SEED)
+
+	return app.getRandomStocksWithSeed(count, seed)
+}
+
+// getRandomStockWithSeed Generates a random portfolio of stocks for a given count and seed.
+func (app *App) getRandomStocksWithSeed(count, seed int) ([]string, int, error) {
 	stocks := make([]string, 0)
-	if err := app.db.QueryRow(context.Background(), app.queries.GetRandomStocks, count).Scan(&stocks); err != nil {
-		return nil, err
+	if err := app.db.QueryRow(context.Background(), app.queries.GetRandomStocks, count, seed).Scan(&stocks); err != nil {
+		return nil, seed, err
 	}
-	return stocks, nil
+	return stocks, seed, nil
 }
 
 // getPortfolioReturns fetches return percent for a given list of stocks and the given time period (in days).

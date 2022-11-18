@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
+
+	"github.com/go-chi/chi/v5"
 )
 
 // portfolioTpl is used to represent the data which is used to render
@@ -16,6 +19,7 @@ type portfolioTpl struct {
 	AvgPortfolioReturns    map[int]float64
 	CurrentPortfolioAmount int64
 	CurrentIndexAmount     int64
+	Seed                   int
 }
 
 // wrap is a middleware that wraps HTTP handlers and injects the "app" context.
@@ -86,14 +90,46 @@ func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 		avgIndexReturns       = make(map[int]float64, 0)
 		dailyPortfolioReturns = make([]DailyReturns, 0)
 		dailyIndexReturns     = make([]DailyReturns, 0)
+		seed                  = -1
+		err                   error
 	)
 
+	seedStr := chi.URLParam(r, "seed")
+	if seedStr != "" {
+		// convert seedStr to int
+		seedRecv, err := strconv.Atoi(seedStr)
+		if err != nil {
+			sendErrorResponse(w, "Invalid seed.", http.StatusBadRequest, nil)
+			return
+		}
+
+		seed = seedRecv
+	}
+
 	// Fetch a list of stocks from DB.
-	stocks, err := app.getRandomStocks(STOCKS_COUNT)
-	if err != nil {
-		app.lo.Error("error generating stocks", "error", err)
-		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
-		return
+	stocks := []string{}
+
+	switch seed {
+	case -1: // seed not set, lets randomly generate the stocks.
+		stocksRecv, seedRecv, err := app.getRandomStocks(STOCKS_COUNT)
+		if err != nil {
+			app.lo.Error("error generating stocks", "error", err)
+			sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
+			return
+		}
+
+		stocks = stocksRecv
+		seed = seedRecv
+	default: // seed is set, lets fetch the stocks from DB.
+		stocksRecv, seedRecv, err := app.getRandomStocksWithSeed(STOCKS_COUNT, seed)
+		if err != nil {
+			app.lo.Error("error fetching stocks", "error", err)
+			sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
+			return
+		}
+
+		stocks = stocksRecv
+		seed = seedRecv
 	}
 
 	// Fetch returns for various time periods.
@@ -158,5 +194,6 @@ func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 		AvgPortfolioReturns:    avgPortfolioReturns,
 		CurrentPortfolioAmount: int64(dailyPortfolioReturns[len(dailyPortfolioReturns)-1].CurrentInvested),
 		CurrentIndexAmount:     int64(dailyIndexReturns[len(dailyIndexReturns)-1].CurrentInvested),
+		Seed:                   seed,
 	})
 }
