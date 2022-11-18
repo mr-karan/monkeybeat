@@ -1,6 +1,12 @@
 {{ define "portfolio" }}
 {{ template "header" .}}
 
+<div class="share-container">
+    <p>Share this portfolio!</p>
+        <a class="share" rel="noreferrer noopener nofollow" target="_blank"  href="/portfolio/{{ .ShareID }}"><i class="bi-share"></i></a>
+        <a class="share" rel="noreferrer noopener nofollow" target="_blank" href="{{ .ShareID | TwitterShare }}"><i class="bi-twitter"></i></a>
+        <a class="share" rel="noreferrer noopener nofollow" target="_blank"  href="{{ .ShareID | WhatsappShare }}"><i class="bi-whatsapp"></i></a>   
+</div>
 <section class="summary">
     <h3>Summary</h3>
     <table>
@@ -34,7 +40,7 @@
 
 <section class="chart">
   <h3>Amount Invested</h3>
-  <p>Present value of ₹ 10000 invested 3 years back</p>
+  <p>Present value of ₹ 10000 invested 3 years ago</p>
   <ul>
     <li>
       Portfolio: ₹ {{.CurrentPortfolioAmount}}
@@ -63,7 +69,7 @@
             {{ range $key, $value := .AvgStockReturns }}
             <tr>
                 <td data-label="Stock">
-                <a href="https://www.screener.in/company/{{$key}}/consolidated/" target="_blank" rel="noopener noreferrer">{{$key}}</a>
+                <a rel="noreferrer noopener nofollow" target="_blank" href="https://www.screener.in/company/{{$key}}/consolidated/">{{$key}}</a>
                 </td>
                 <td data-label="1M">{{ index $value 30 | FormatNumber | Color | SafeHTML}}</td>
                 <td data-label="6M">{{ index $value 180 | FormatNumber | Color | SafeHTML}}</td>
@@ -72,8 +78,14 @@
             </tr>
             {{ end }}
         </tbody>
-
     </table>
+    <br/>
+    <div class="share-container">
+        <p>Share this portfolio!</p>
+            <a class="share" rel="noreferrer noopener nofollow" target="_blank"  href="/portfolio/{{ .ShareID }}"><i class="bi-share"></i></a>
+            <a class="share" rel="noreferrer noopener nofollow" target="_blank" href="{{ .ShareID | TwitterShare }}"><i class="bi-twitter"></i></a>
+            <a class="share" rel="noreferrer noopener nofollow" target="_blank"  href="{{ .ShareID | WhatsappShare }}"><i class="bi-whatsapp"></i></a>
+    </div>
 </section>
 
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>

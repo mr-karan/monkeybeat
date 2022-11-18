@@ -4,18 +4,21 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
 // portfolioTpl is used to represent the data which is used to render
 // portfolio web view.
 type portfolioTpl struct {
-	DailyPortfolioReturns  []DailyReturns
-	DailyIndexReturns      []DailyReturns
-	AvgStockReturns        AvgStockReturns
-	AvgIndexReturns        map[int]float64
-	AvgPortfolioReturns    map[int]float64
-	CurrentPortfolioAmount int64
-	CurrentIndexAmount     int64
+	DailyPortfolioReturns  []DailyReturns  `json:"daily_portfolio_returns"`
+	DailyIndexReturns      []DailyReturns  `json:"daily_index_returns"`
+	AvgStockReturns        AvgStockReturns `json:"avg_stock_returns"`
+	AvgIndexReturns        map[int]float64 `json:"avg_index_returns"`
+	AvgPortfolioReturns    map[int]float64 `json:"avg_portfolio_returns"`
+	CurrentPortfolioAmount int64           `json:"current_portfolio_amount"`
+	CurrentIndexAmount     int64           `json:"curent_index_amount"`
+	ShareID                string          `json:"uuid"`
 }
 
 // wrap is a middleware that wraps HTTP handlers and injects the "app" context.
@@ -88,6 +91,21 @@ func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 		dailyIndexReturns     = make([]DailyReturns, 0)
 	)
 
+	// Check if UUID is in URL.
+	uuid := chi.URLParam(r, "uuid")
+	if uuid != "" {
+		// If it exists, then simply lookup the data for the given UUID and render HTML.
+		portfolioTpl, err := app.getLink(uuid)
+		if err != nil {
+			app.lo.Error("error fetching data for uuid", "error", err, "uuid", uuid)
+			sendErrorResponse(w, "Invalid UUID", http.StatusBadRequest, nil)
+			return
+		}
+		portfolioTpl.ShareID = uuid
+		app.tpl.ExecuteTemplate(w, "portfolio", portfolioTpl)
+		return
+	}
+
 	// Fetch a list of stocks from DB.
 	stocks, err := app.getRandomStocks(STOCKS_COUNT)
 	if err != nil {
@@ -150,7 +168,8 @@ func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.tpl.ExecuteTemplate(w, "portfolio", portfolioTpl{
+	// Generate a unique UUID for the portfolio and save to `share` table.
+	data := portfolioTpl{
 		DailyPortfolioReturns:  dailyPortfolioReturns,
 		DailyIndexReturns:      dailyIndexReturns,
 		AvgStockReturns:        avgStockReturns,
@@ -158,5 +177,15 @@ func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 		AvgPortfolioReturns:    avgPortfolioReturns,
 		CurrentPortfolioAmount: int64(dailyPortfolioReturns[len(dailyPortfolioReturns)-1].CurrentInvested),
 		CurrentIndexAmount:     int64(dailyIndexReturns[len(dailyIndexReturns)-1].CurrentInvested),
-	})
+	}
+
+	id, err := app.savePortfolio(data)
+	if err != nil {
+		app.lo.Error("error saving data", "error", err)
+		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
+		return
+	}
+	data.ShareID = id
+
+	app.tpl.ExecuteTemplate(w, "portfolio", data)
 }

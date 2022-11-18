@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -65,6 +66,18 @@ func main() {
 		"SafeHTML": func(val string) template.HTML {
 			return template.HTML(val)
 		},
+		"TwitterShare": func(id string) string {
+			link, _ := url.JoinPath(ko.MustString("app.domain"), "/portfolio", id)
+			twtURL := "https://twitter.com/intent/tweet?text="
+			txt := fmt.Sprintf("Check out my awesome portfolio on Monkeybeat. Visit %s via #monkeybeat", link)
+			return twtURL + txt
+		},
+		"WhatsappShare": func(id string) string {
+			link, _ := url.JoinPath(ko.MustString("app.domain"), "/portfolio", id)
+			waURL := "https://api.whatsapp.com/send/?text="
+			txt := fmt.Sprintf("Check out my awesome portfolio on Monkeybeat. Visit %s", link)
+			return waURL + txt
+		},
 	}
 	tpl, err := template.New("static").Funcs(funcMap).ParseFS(staticDir, "static/*.html")
 	if err != nil {
@@ -80,6 +93,9 @@ func main() {
 	// Frontend Handlers.
 	r.Get("/", wrap(app, handleIndex))
 	r.Get("/portfolio", wrap(app, handlePortfolio))
+	r.Get("/portfolio/{uuid}", wrap(app, handlePortfolio))
+
+	// Static assets.
 	static, _ := fs.Sub(staticDir, "static")
 	r.Get("/static/*", func(w http.ResponseWriter, r *http.Request) {
 		fs := http.StripPrefix("/static/", http.FileServer(http.FS(static)))

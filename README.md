@@ -11,3 +11,9 @@ Visit https://monkeybeat.market and have fun!
 - Run `make schema` which creates the database/tables.
 - Run `make seed` which loads the database with initial data of last 3 years of stock prices in NIFTY500 universe.
 - Run `make fresh` which builds the binary and runs it.
+
+NOTE: If you don't have `clickhouse-client` on the local machine, you can use:
+
+```bash
+alias clickhouse-client="docker exec -it clickhouse clickhouse-client"
+```

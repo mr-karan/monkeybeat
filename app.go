@@ -2,9 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"html/template"
+	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
+	"github.com/google/uuid"
 	"github.com/zerodha/logf"
 )
 
@@ -26,18 +30,25 @@ type App struct {
 	tpl     *template.Template
 	db      driver.Conn
 	queries *queries
+	domain  string
 }
 
 type queries struct {
 	GetRandomStocks string `query:"get-random-stocks"`
 	GetReturns      string `query:"get-returns"`
 	GetDailyValue   string `query:"get-daily-value"`
+	InsertLink      string `query:"insert-link"`
+	GetLink         string `query:"get-link"`
 }
 
 // Returns represent portfolio return for a single stock and a given timeframe.
 type Returns struct {
 	Symbol  string  `ch:"symbol" json:"symbol"`
 	Percent float64 `ch:"return_percent" json:"percent"`
+}
+
+type LinkDetails struct {
+	Portfolio string `ch:"portfolio"`
 }
 
 // ReturnsPeriod computes average returns for all stocks/indices for various time periods.
@@ -79,7 +90,6 @@ func (app *App) getReturns(days int, stocks []string) ([]Returns, error) {
 		return nil, err
 	}
 	return returns, nil
-
 }
 
 // Fetch current investment amount for each date since beginning to show overall amount.
@@ -89,6 +99,53 @@ func (app *App) getDailyValue(stocks []string, days int) ([]DailyReturns, error)
 		return nil, err
 	}
 	return returns, nil
+}
+
+// savePortfolio generates a unique UUID for the given portfolio and saves it to
+// share table.
+func (app *App) savePortfolio(data portfolioTpl) (string, error) {
+	uuid := uuid.New()
+
+	// Save the portfolio data as a JSON string.
+	pf, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+
+	batch, err := app.db.PrepareBatch(context.Background(), app.queries.InsertLink)
+	if err != nil {
+		return "", fmt.Errorf("error preparing batch: %v", err)
+	}
+	if err = batch.Append(time.Now(), uuid, pf); err != nil {
+		return "", fmt.Errorf("error appending data to batch: %v", err)
+	}
+	if err = batch.Send(); err != nil {
+		return "", fmt.Errorf("error inserting data: %v", err)
+	}
+
+	return uuid.String(), nil
+}
+
+// Fetch the portfolio data for a given UUID.
+func (app *App) getLink(uuid string) (portfolioTpl, error) {
+	var (
+		out portfolioTpl
+	)
+	data := make([]LinkDetails, 0)
+
+	if err := app.db.Select(context.Background(), &data, app.queries.GetLink, uuid); err != nil {
+		return out, fmt.Errorf("error fetching uuid: %v", err)
+	}
+
+	if len(data) == 0 {
+		return out, fmt.Errorf("no records fetched for given uuid")
+	}
+
+	if err := json.Unmarshal([]byte(data[0].Portfolio), &out); err != nil {
+		return out, fmt.Errorf("error unmarshalling data: %v", err)
+	}
+
+	return out, nil
 }
 
 // computeAvg iterates on the change percent in Returns and computes an average.

@@ -1,5 +1,6 @@
 [app]
 log = "debug"
+domain = "http://localhost:7777"
 
 [server]
 address = "0.0.0.0:7777"

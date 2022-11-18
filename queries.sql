@@ -81,3 +81,14 @@ FROM initial
 INNER JOIN present ON initial.tradingsymbol = present.tradingsymbol
 GROUP BY close_date
 ORDER BY close_date ASC
+
+-- name: insert-link
+--- Insert into link table.
+INSERT INTO monkeybeat.link
+
+-- name: get-link
+--- Fetch data from the links table for a given UUID.
+-- $1: uuid
+SELECT portfolio
+FROM link
+WHERE uuid=$1

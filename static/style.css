@@ -156,6 +156,18 @@ footer span {
     font-size: 0.75rem;
 }
 
+.share-container {
+    display: flex;
+    justify-content: right;
+}
+
+
+.share {
+    display: flex;
+    margin: 0 8px;
+    align-items: center;
+}
+
 
 @media(max-width: 700px) {
 
