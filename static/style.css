@@ -19,11 +19,19 @@ body {
 body {
     font-family: "Lato", sans-serif;
     color: var(--secondary);
-    background-color: #f9f9ed;
+    background-color: #f4f3ee;
 }
 
-header p {
+ffe5ec header p {
     text-align: center;
+}
+
+header h1 {
+    text-align: center;
+}
+
+header a {
+    text-decoration: none;
 }
 
 h1 {
@@ -39,7 +47,6 @@ h3 {
 
 a {
     color: var(--primary);
-    text-decoration: none;
     font-weight: 600;
 }
 
@@ -85,9 +92,10 @@ button {
     width: 35%;
 }
 
-button:disabled,
-button[disabled] {
-    background-color: #efae6c
+button:hover,
+button[hover] {
+    background-color: #e85d04;
+    opacity: 0.8;
 }
 
 table {
@@ -164,6 +172,10 @@ footer span {
     .container {
         padding: 20px;
         margin: 0;
+    }
+
+    button {
+        width: 50%;
     }
 
     table {

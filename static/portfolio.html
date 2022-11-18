@@ -62,7 +62,9 @@
         <tbody>
             {{ range $key, $value := .AvgStockReturns }}
             <tr>
-                <td data-label="Stock">{{$key}}</td>
+                <td data-label="Stock">
+                <a href="https://www.screener.in/company/{{$key}}/consolidated/" target="_blank" rel="noopener noreferrer">{{$key}}</a>
+                </td>
                 <td data-label="1M">{{ index $value 30 | FormatNumber | Color | SafeHTML}}</td>
                 <td data-label="6M">{{ index $value 180 | FormatNumber | Color | SafeHTML}}</td>
                 <td data-label="1Y">{{ index $value 360 | FormatNumber | Color | SafeHTML}}</td>
