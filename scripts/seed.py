@@ -9,7 +9,7 @@ import pandas as pd
 import yfinance as yf
 
 logging.basicConfig(
-    format="%(asctime)s - %(levelname)s - %(message)s", level=logging.DEBUG
+    format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 
 INSTRUMENTS_FILES = [
