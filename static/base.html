@@ -9,9 +9,9 @@
     <title>MonkeyBeat | Can a monkey beat your fund manager?</title>
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <meta name="description"
-        content="Generate a portfolio of randomly selected stocks from NIFTY500 universe and see if it beats the underlying benchmark">
+        content="Generate a portfolio of randomly selected stocks from an index and see if it beats the underlying benchmark">
     <meta name="author" content="Karan Sharma">
-    <meta name="keywords" content="stocks,returns,equity,portfolio,nifty500,nifty">
+    <meta name="keywords" content="stocks,returns,equity,portfolio,nasdaq,nifty">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
@@ -24,17 +24,28 @@
     <div class="container">
         <header>
             <h1><a href="/">MonkeyBeat</a></h1>
-            <p>Can an equi-weighted portfolio of 10 stocks randomly selected from the NIFTY500 universe beat the markets? Find Out!</p>
+            <p>Can an equi-weighted portfolio of 10 stocks randomly selected from an index beat the underlying benchmark? Find Out!</p>
         </header>
         <main>
             <section class="generate">
-                <form method="get" action="/portfolio">
-                    <div class="btn-generate">
-                        <button type="submit">Generate Portfolio</button>
+               <form method="get" action="/portfolio" class="box">
+                <div class="row">
+                    <div class="field">
+                        <label for="index">Choose an underlying index</label>
+                        <select id="index" name="index">
+                           <option selected value=NIFTY50>NIFTY50</option>
+                           <option value=NIFTY500>NIFTY500</option>
+                           <option value=NASDAQ100>NASDAQ100</option>
+                           <option value=SP500>S&P500</option>
+                        </select>
                     </div>
-                </form>
+                    <div class="btn-generate field">
+                       <button type="submit">Generate Portfolio</button>
+                    </div>
+                </div>
+               </form>
             </section>
-        </main>
+         </main>   
 {{ end }}
 
 {{ define "footer" }}

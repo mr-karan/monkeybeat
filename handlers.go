@@ -19,6 +19,7 @@ type portfolioTpl struct {
 	CurrentPortfolioAmount int64           `json:"current_portfolio_amount"`
 	CurrentIndexAmount     int64           `json:"curent_index_amount"`
 	ShareID                string          `json:"uuid"`
+	Category               string          `json:"category"`
 }
 
 // wrap is a middleware that wraps HTTP handlers and injects the "app" context.
@@ -101,13 +102,27 @@ func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 			sendErrorResponse(w, "Invalid UUID", http.StatusBadRequest, nil)
 			return
 		}
+		// Set the UUID in the template.
 		portfolioTpl.ShareID = uuid
 		app.tpl.ExecuteTemplate(w, "portfolio", portfolioTpl)
 		return
 	}
 
+	indexParam := r.URL.Query().Get("index")
+	if indexParam == "" {
+		sendErrorResponse(w, "Unknown index", http.StatusBadRequest, nil)
+		return
+	}
+
+	// Check if a valid index is sent.
+	catgeory, ok := indexSymbols[indexParam]
+	if !ok {
+		sendErrorResponse(w, "Unknown index", http.StatusBadRequest, nil)
+		return
+	}
+
 	// Fetch a list of stocks from DB.
-	stocks, err := app.getRandomStocks(STOCKS_COUNT)
+	stocks, err := app.getRandomStocks(STOCKS_COUNT, catgeory)
 	if err != nil {
 		app.lo.Error("error generating stocks", "error", err)
 		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
@@ -138,7 +153,7 @@ func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch index returns for various time periods.
 	for _, days := range returnPeriods {
-		returns, err := app.getIndexReturns([]string{N500_SYMBOL}, days)
+		returns, err := app.getIndexReturns([]string{catgeory}, days)
 		if err != nil {
 			app.lo.Error("error fetching index returns", "error", err)
 			sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
@@ -155,7 +170,7 @@ func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
 		return
 	}
-	dailyIndexReturns, err = app.getDailyValue([]string{N500_SYMBOL}, 1080)
+	dailyIndexReturns, err = app.getDailyValue([]string{catgeory}, 1080)
 	if err != nil {
 		app.lo.Error("error fetching daily returns", "error", err)
 		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
@@ -177,6 +192,7 @@ func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 		AvgPortfolioReturns:    avgPortfolioReturns,
 		CurrentPortfolioAmount: int64(dailyPortfolioReturns[len(dailyPortfolioReturns)-1].CurrentInvested),
 		CurrentIndexAmount:     int64(dailyIndexReturns[len(dailyIndexReturns)-1].CurrentInvested),
+		Category:               catgeory,
 	}
 
 	id, err := app.savePortfolio(data)

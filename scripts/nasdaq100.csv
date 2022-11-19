@@ -1,0 +1,103 @@
+Symbol,Name,MarketCap,LastSale,NetChange,PercentageChange
+AAPL,Apple Inc.,"2,622,966,168,600",$151.29,$0.57,0.0038
+ABNB,"Airbnb, Inc.","58,309,930,914",$97.77,$1.53,-1.54%
+ADBE,Adobe Inc.,"153,816,814,000",$330.86,$6.97,-2.06%
+ADI,"Analog Devices, Inc.","83,246,176,792",$161.85,$0.38,0.0024
+ADP,"Automatic Data Processing, Inc.","106,204,205,419",$256.02,$2.47,0.0097
+ADSK,"Autodesk, Inc.","45,410,267,928",$210.37,$4.31,-2.01%
+AEP,"American Electric Power Company, Inc.","46,905,476,528",$91.28,$2.21,0.0248
+ALGN,"Align Technology, Inc.","15,119,426,660",$193.56,$1.40,-0.72%
+AMAT,"Applied Materials, Inc.","90,074,391,772",$104.70,$0.25,0.0024
+AMD,"Advanced Micro Devices, Inc.","119,725,241,211",$73.57,$0.33,-0.45%
+AMGN,Amgen Inc.,"153,291,970,092",$287.29,$0.01,0.00%
+AMZN,"Amazon.com, Inc.","958,052,255,148",$94.14,$0.71,-0.75%
+ANSS,"ANSYS, Inc.","21,234,478,404",$243.76,$0.16,-0.07%
+ASML,ASML Holding N.V.,"235,603,152,000",$593.16,$4.13,0.007
+ATVI,"Activision Blizzard, Inc","57,992,536,138",$74.10,$0.29,0.0039
+AVGO,Broadcom Inc.,"208,643,810,005",$515.16,$3.05,0.006
+AZN,Astrazeneca PLC,"201,654,102,297",$65.07,$1.01,0.0158
+BIDU,"Baidu, Inc.","33,162,482,733",$95.97,$3.61,-3.63%
+BIIB,Biogen Inc.,"43,616,585,258",$302.89,$0.84,0.0028
+BKNG,Booking Holdings Inc.,"75,262,273,749","$1,940.28",$0.48,-0.02%
+CDNS,"Cadence Design Systems, Inc.","45,267,626,320",$165.02,$0.08,-0.05%
+CEG,Constellation Energy Corporation,"30,510,769,604",$93.30,$3.25,0.0361
+CHTR,"Charter Communications, Inc.","76,710,153,885",$374.38,$9.91,-2.58%
+CMCSA,Comcast Corporation,"149,157,599,943",$34.50,$0.24,0.007
+COST,Costco Wholesale Corporation,"231,778,512,612",$523.67,$2.35,0.0045
+CPRT,"Copart, Inc.","30,672,834,053",$64.42,$0.28,0.0044
+CRWD,"CrowdStrike Holdings, Inc.","32,437,556,251",$138.99,$0.24,-0.17%
+CSCO,"Cisco Systems, Inc.","196,224,256,933",$47.79,$1.20,0.0258
+CSX,CSX Corporation,"64,922,381,552",$30.88,$0.07,-0.23%
+CTAS,Cintas Corporation,"45,631,421,797",$449.37,$6.09,0.0137
+CTSH,Cognizant Technology Solutions Corporation,"30,819,868,277",$59.97,$0.50,0.0084
+DDOG,"Datadog, Inc.","24,299,678,804",$76.52,$2.48,-3.14%
+DLTR,"Dollar Tree, Inc.","36,582,342,602",$163.36,$0.34,-0.21%
+DOCU,"DocuSign, Inc.","9,235,845,454",$46.00,$1.44,-3.04%
+DXCM,"DexCom, Inc.","43,925,273,975",$113.72,$1.08,0.0096
+EA,Electronic Arts Inc.,"35,912,516,839",$130.08,$1.43,0.0111
+EBAY,eBay Inc.,"24,788,667,094",$45.68,$0.21,0.0046
+EXC,Exelon Corporation,"38,338,567,517",$38.58,$1.10,0.0293
+FAST,Fastenal Company,"29,588,775,401",$51.66,$0.07,0.0014
+FISV,"Fiserv, Inc.","63,413,903,669",$99.86,$1.27,0.0129
+FTNT,"Fortinet, Inc.","41,116,712,112",$52.15,$1.99,-3.68%
+GILD,"Gilead Sciences, Inc.","104,879,870,319",$83.62,$0.00,0%
+GOOG,Alphabet Inc.,"1,265,825,400,000",$97.80,$0.70,-0.71%
+GOOGL,Alphabet Inc.,"1,261,036,490,000",$97.43,$0.93,-0.95%
+HON,Honeywell International Inc.,"144,233,288,431",$214.53,$0.02,0.0001
+IDXX,"IDEXX Laboratories, Inc.","34,277,110,333",$413.89,$3.45,0.0084
+ILMN,"Illumina, Inc.","34,694,088,000",$220.56,$4.12,-1.83%
+INTC,Intel Corporation,"123,273,490,000",$29.87,$0.02,-0.07%
+INTU,Intuit Inc.,"107,130,284,912",$380.07,$1.81,-0.47%
+ISRG,"Intuitive Surgical, Inc.","92,625,629,643",$262.11,$1.34,0.0051
+JD,"JD.com, Inc.","87,553,305,000",$56.07,$1.45,-2.52%
+KDP,Keurig Dr Pepper Inc.,"52,996,123,908",$37.42,$0.58,0.0157
+KHC,The Kraft Heinz Company,"46,669,839,248",$38.10,$0.35,0.0093
+KLAC,KLA Corporation,"53,334,275,183",$376.34,$0.35,0.0009
+LCID,"Lucid Group, Inc.","18,921,654,073",$11.26,$0.20,-1.75%
+LRCX,Lam Research Corporation,"62,284,442,751",$456.70,$4.46,-0.97%
+LULU,lululemon athletica inc.,"44,353,088,717",$347.85,$6.42,-1.81%
+MAR,Marriott International,"51,187,620,818",$161.71,$1.74,0.0109
+MCHP,Microchip Technology Incorporated,"40,794,146,021",$74.17,$0.38,0.0051
+MDLZ,"Mondelez International, Inc.","88,751,546,835",$64.99,$0.54,0.0084
+MELI,"MercadoLibre, Inc.","48,387,710,657",$962.08,$34.95,0.0377
+META,"Meta Platforms, Inc.","297,106,028,922",$112.05,$0.60,0.0054
+MNST,Monster Beverage Corporation,"52,017,838,116",$99.70,$0.74,0.0075
+MRNA,"Moderna, Inc.","69,763,331,366",$181.59,$2.31,-1.26%
+MRVL,"Marvell Technology, Inc.","37,514,400,000",$44.00,$0.07,0.0016
+MSFT,Microsoft Corporation,"1,798,168,011,796",$241.22,$0.46,-0.19%
+MTCH,"Match Group, Inc.","12,959,803,318",$46.40,$0.63,-1.34%
+MU,"Micron Technology, Inc.","63,686,335,651",$58.58,$0.16,-0.27%
+NFLX,"Netflix, Inc.","128,157,001,862",$287.98,$7.30,-2.47%
+NTES,"NetEase, Inc.","44,294,467,506",$67.44,$3.56,-5.01%
+NVDA,NVIDIA Corporation,"383,684,100,000",$154.09,$2.68,-1.71%
+NXPI,NXP Semiconductors N.V.,"44,555,648,172",$171.94,$1.85,0.0109
+ODFL,"Old Dominion Freight Line, Inc.","32,961,087,107",$298.34,$0.43,-0.14%
+OKTA,"Okta, Inc.","7,921,399,005",$49.86,$0.79,0.0161
+ORLY,"O'Reilly Automotive, Inc.","52,455,508,914",$838.27,$8.29,0.01
+PANW,"Palo Alto Networks, Inc.","50,310,202,499",$167.48,$10.92,0.0697
+PAYX,"Paychex, Inc.","43,547,204,860",$120.83,$0.61,0.0051
+PCAR,PACCAR Inc.,"36,122,618,015",$103.87,$0.36,0.0035
+PDD,Pinduoduo Inc.,"88,696,654,680",$70.15,$0.40,-0.57%
+PEP,"Pepsico, Inc.","249,820,010,868",$181.33,$1.30,0.0072
+PYPL,"PayPal Holdings, Inc.","96,811,155,001",$84.92,$0.72,-0.84%
+QCOM,QUALCOMM Incorporated,"138,835,850,000",$123.85,$0.99,0.0081
+REGN,"Regeneron Pharmaceuticals, Inc.","80,231,322,573",$736.73,$2.35,-0.32%
+ROST,"Ross Stores, Inc.","37,340,486,975",$107.59,$9.66,0.0986
+SBUX,Starbucks Corporation,"112,436,805,000",$97.95,$0.98,0.0101
+SGEN,Seagen Inc.,"24,463,207,356",$131.76,$0.23,0.0017
+SIRI,Sirius XM Holdings Inc.,"24,854,142,523",$6.39,$0.03,0.0047
+SNPS,"Synopsys, Inc.","49,832,277,896",$325.89,$1.62,0.005
+SPLK,Splunk Inc.,"12,576,710,000",$77.30,$0.95,-1.21%
+SWKS,"Skyworks Solutions, Inc.","15,134,832,788",$94.33,$0.58,0.0062
+TEAM,Atlassian Corporation,"30,345,553,775",$118.76,$2.93,-2.41%
+TMUS,"T-Mobile US, Inc.","185,167,459,763",$148.83,$1.06,0.0072
+TSLA,"Tesla, Inc.","568,995,413,785",$180.19,$2.98,-1.63%
+TXN,Texas Instruments Incorporated,"158,988,412,508",$175.18,$0.18,-0.10%
+VRSK,"Verisk Analytics, Inc.","27,139,564,843",$173.54,$3.31,0.0194
+VRSN,"VeriSign, Inc.","20,593,696,578",$194.25,$1.30,-0.66%
+VRTX,Vertex Pharmaceuticals Incorporated,"80,762,831,543",$314.63,$4.73,0.0153
+WBA,"Walgreens Boots Alliance, Inc.","34,376,320,367",$39.75,$0.38,-0.95%
+WDAY,"Workday, Inc.","37,565,440,000",$146.74,$2.07,-1.39%
+XEL,Xcel Energy Inc.,"37,420,852,156",$68.38,$1.24,0.0185
+ZM,"Zoom Video Communications, Inc.","24,299,749,148",$81.64,$0.95,-1.15%
+ZS,"Zscaler, Inc.","19,845,671,660",$138.73,$1.98,0.0145

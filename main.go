@@ -67,15 +67,19 @@ func main() {
 			return template.HTML(val)
 		},
 		"TwitterShare": func(id string) string {
-			link, _ := url.JoinPath(ko.MustString("app.domain"), "/portfolio", id)
-			twtURL := "https://twitter.com/intent/tweet?text="
-			txt := fmt.Sprintf("Check out my awesome portfolio on Monkeybeat. Visit %s via #monkeybeat", link)
+			var (
+				link, _ = url.JoinPath(ko.MustString("app.domain"), "/portfolio", id)
+				twtURL  = "https://twitter.com/intent/tweet?text="
+				txt     = fmt.Sprintf("Check out my awesome portfolio on Monkeybeat. Visit %s via #monkeybeat", link)
+			)
 			return twtURL + txt
 		},
 		"WhatsappShare": func(id string) string {
-			link, _ := url.JoinPath(ko.MustString("app.domain"), "/portfolio", id)
-			waURL := "https://api.whatsapp.com/send/?text="
-			txt := fmt.Sprintf("Check out my awesome portfolio on Monkeybeat. Visit %s", link)
+			var (
+				link, _ = url.JoinPath(ko.MustString("app.domain"), "/portfolio", id)
+				waURL   = "https://api.whatsapp.com/send/?text="
+				txt     = fmt.Sprintf("Check out my awesome portfolio on Monkeybeat. Visit %s", link)
+			)
 			return waURL + txt
 		},
 	}

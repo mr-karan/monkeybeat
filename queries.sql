@@ -1,8 +1,9 @@
 -- monkeybeat
 -- name: get-random-stocks
--- Fetch a list of random stocks for the given count.
+-- Fetch a list of random stocks for the given count and index category.
 -- $1: count
-SELECT groupArraySample($1)(tradingsymbol) AS stocks FROM monkeybeat.prices WHERE segment='EQ'
+-- $2: category
+SELECT groupArraySample($1)(tradingsymbol) AS stocks FROM monkeybeat.prices WHERE segment='EQ' AND category=$2
 
 -- name: get-returns
 -- Get average returns for given date and given list of stocks.

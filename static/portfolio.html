@@ -28,7 +28,7 @@
                 <td data-label="3Y">{{ index .AvgPortfolioReturns 1080 | FormatNumber | Color | SafeHTML}}</td>
             </tr>
             <tr>
-                <td data-label="Name">NIFTY500</td>
+                <td data-label="Name">{{.Category}}</td>
                 <td data-label="1M">{{ index .AvgIndexReturns 30 | FormatNumber | Color | SafeHTML}}</td>
                 <td data-label="6M">{{ index .AvgIndexReturns 180 | FormatNumber | Color | SafeHTML}}</td>
                 <td data-label="1Y">{{ index .AvgIndexReturns 360 | FormatNumber | Color | SafeHTML}}</td>
@@ -46,7 +46,7 @@
       Portfolio: ₹ {{.CurrentPortfolioAmount}}
     </li>
     <li>
-      NIFTY500: ₹ {{.CurrentIndexAmount}}
+      {{.Category}}: ₹ {{.CurrentIndexAmount}}
     </li>
   </ul>
   <div id="chart"></div>
@@ -114,7 +114,7 @@ var options = {
         name: "Portfolio",
         data: portfolio_returns_prices
     }, {
-        name: "NIFTY500",
+        name: "{{.Category}}",
         data: index_returns_prices
     }],
     chart: {

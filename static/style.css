@@ -22,7 +22,7 @@ body {
     background-color: #f4f3ee;
 }
 
-ffe5ec header p {
+header p {
     text-align: center;
 }
 
@@ -61,6 +61,16 @@ a:hover {
     min-height: 90vh;
 }
 
+.row {
+    display: flex;
+    margin-top: 10px;
+    align-items: center;
+}
+
+.field {
+    flex: 50%;
+}
+
 main {
     padding-bottom: 3rem;
 }
@@ -75,10 +85,14 @@ section:last-child {
 
 .btn-generate {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-top: 2rem;
-    margin-bottom: 2rem;
+    justify-content: end;
+}
+
+.box {
+    box-shadow: 1px 1px 4px #ffbf69;
+    border: 1px solid #ffbf69;
+    padding: 30px;
+    border-radius: 3px;
 }
 
 button {
@@ -89,13 +103,30 @@ button {
     border-radius: 25px;
     color: #fff;
     cursor: pointer;
-    width: 35%;
+    width: auto;
 }
 
 button:hover,
 button[hover] {
     background-color: #e85d04;
     opacity: 0.8;
+}
+
+select {
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    font-size: 1.3rem;
+    padding: 10px 15px;
+    text-align: center;
+}
+
+select:focus {
+    border-color: var(--primary);
+}
+
+label {
+    display: block;
+    padding-bottom: 0.5rem;
 }
 
 table {
@@ -151,6 +182,10 @@ footer span {
     color: var(--primary);
 }
 
+.generate {
+    margin-top: 3rem;
+}
+
 .disclaimer {
     color: #9b9b9b;
     font-size: 0.75rem;
@@ -186,10 +221,6 @@ footer span {
         margin: 0;
     }
 
-    button {
-        width: 50%;
-    }
-
     table {
         border: 0;
     }
@@ -220,5 +251,17 @@ footer span {
         float: left;
         font-weight: bold;
         text-transform: uppercase;
+    }
+
+    .box {
+        padding: 10px;
+    }
+
+    .row {
+        flex-direction: column;
+    }
+
+    .field {
+        margin: 15px 0;
     }
 }

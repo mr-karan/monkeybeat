@@ -13,16 +13,16 @@ import (
 )
 
 const (
-	STOCKS_COUNT         = 10       // Number of stocks to add in a portfolio.
-	N500_SYMBOL          = "CRSLDX" // Index symbol.
-	NORMALIZATION_FACTOR = 100      // Factor to scale the inital price of each stock to calculate daily returns.
-	PORTFOLIO_AMOUNT     = 10000    // Hypothetical starting amount invested in the portfolio.
+	STOCKS_COUNT         = 10    // Number of stocks to add in a portfolio.
+	NORMALIZATION_FACTOR = 100   // Factor to scale the inital price of each stock to calculate daily returns.
+	PORTFOLIO_AMOUNT     = 10000 // Hypothetical starting amount invested in the portfolio.
 )
 
 var (
 	// Time periods in days to calculate returns.
 	// NOTE: If the values are changed here, they must be updated in HTML templates as well.
 	returnPeriods = []int{30, 180, 360, 1080}
+	indexSymbols  = map[string]string{"NIFTY50": "NSEI", "NIFTY500": "CRSLDX", "NASDAQ100": "NDX", "SP500": "GSPC"}
 )
 
 type App struct {
@@ -30,7 +30,6 @@ type App struct {
 	tpl     *template.Template
 	db      driver.Conn
 	queries *queries
-	domain  string
 }
 
 type queries struct {
@@ -65,10 +64,10 @@ type DailyReturns struct {
 	ReturnPercent   float64 `ch:"return_percent"`
 }
 
-// getRandomStocks Generates a random portfolio of stocks for a given count.
-func (app *App) getRandomStocks(count int) ([]string, error) {
+// getRandomStocks Generates a random portfolio of stocks for a given count and index catgeory.
+func (app *App) getRandomStocks(count int, category string) ([]string, error) {
 	stocks := make([]string, 0)
-	if err := app.db.QueryRow(context.Background(), app.queries.GetRandomStocks, count).Scan(&stocks); err != nil {
+	if err := app.db.QueryRow(context.Background(), app.queries.GetRandomStocks, count, category).Scan(&stocks); err != nil {
 		return nil, err
 	}
 	return stocks, nil
