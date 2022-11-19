@@ -22,7 +22,7 @@ var (
 	// Time periods in days to calculate returns.
 	// NOTE: If the values are changed here, they must be updated in HTML templates as well.
 	returnPeriods = []int{30, 180, 360, 1080}
-	indexSymbols  = map[string]string{"NIFTY50": "NSEI", "NIFTY500": "CRSLDX", "NASDAQ100": "NDX", "SP500": "GSPC"}
+	indexSymbols  = []string{"NIFTY50", "NIFTY500", "NASDAQ100", "SP500"}
 )
 
 type App struct {
@@ -154,4 +154,14 @@ func computeAvg(ret []Returns) float64 {
 		total += r.Percent
 	}
 	return total / float64(len((ret)))
+}
+
+// validIndex loops over a list of valid index symbol and returns false if it's an unknown symbol.
+func validIndex(i string) bool {
+	for _, idx := range indexSymbols {
+		if idx == i {
+			return true
+		}
+	}
+	return false
 }

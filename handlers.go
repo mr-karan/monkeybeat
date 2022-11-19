@@ -108,21 +108,20 @@ func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	indexParam := r.URL.Query().Get("index")
-	if indexParam == "" {
+	category := r.URL.Query().Get("index")
+	if category == "" {
 		sendErrorResponse(w, "Unknown index", http.StatusBadRequest, nil)
 		return
 	}
 
 	// Check if a valid index is sent.
-	catgeory, ok := indexSymbols[indexParam]
-	if !ok {
+	if ok := validIndex(category); !ok {
 		sendErrorResponse(w, "Unknown index", http.StatusBadRequest, nil)
 		return
 	}
 
 	// Fetch a list of stocks from DB.
-	stocks, err := app.getRandomStocks(STOCKS_COUNT, catgeory)
+	stocks, err := app.getRandomStocks(STOCKS_COUNT, category)
 	if err != nil {
 		app.lo.Error("error generating stocks", "error", err)
 		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
@@ -153,7 +152,7 @@ func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch index returns for various time periods.
 	for _, days := range returnPeriods {
-		returns, err := app.getIndexReturns([]string{catgeory}, days)
+		returns, err := app.getIndexReturns([]string{category}, days)
 		if err != nil {
 			app.lo.Error("error fetching index returns", "error", err)
 			sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
@@ -170,7 +169,7 @@ func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
 		return
 	}
-	dailyIndexReturns, err = app.getDailyValue([]string{catgeory}, 1080)
+	dailyIndexReturns, err = app.getDailyValue([]string{category}, 1080)
 	if err != nil {
 		app.lo.Error("error fetching daily returns", "error", err)
 		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
@@ -192,7 +191,7 @@ func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 		AvgPortfolioReturns:    avgPortfolioReturns,
 		CurrentPortfolioAmount: int64(dailyPortfolioReturns[len(dailyPortfolioReturns)-1].CurrentInvested),
 		CurrentIndexAmount:     int64(dailyIndexReturns[len(dailyIndexReturns)-1].CurrentInvested),
-		Category:               catgeory,
+		Category:               category,
 	}
 
 	id, err := app.savePortfolio(data)

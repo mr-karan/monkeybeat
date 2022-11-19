@@ -13,10 +13,10 @@ logging.basicConfig(
 )
 
 INSTRUMENTS_FILES = [
-    "ind_nifty500list.csv",
     "ind_nifty50list.csv",
-    "sp500.csv",
     "nasdaq100.csv",
+    "ind_nifty500list.csv",
+    "sp500.csv",
 ]
 TICKER_DATA_OUTPUT_FILE = "ticker.csv"
 INDEX_DATA_OUTPUT_FILE = "index.csv"
@@ -27,6 +27,13 @@ INDEX_SYMBOLS = {
     "ind_nifty50list": "^NSEI",
     "nasdaq100": "^NDX",
     "sp500": "^GSPC",
+}
+
+INDEX_HUMAN_SYMBOLS = {
+    "^CRSLDX": "NIFTY500",
+    "^NSEI": "NIFTY50",
+    "^NDX": "NASDAQ100",
+    "^GSPC": "SP500",
 }
 
 parser = argparse.ArgumentParser()
@@ -72,11 +79,13 @@ def main():
             ticker_list,
             False,
             index,
-            cleanup_name(index) + TICKER_DATA_OUTPUT_FILE,
+            cleanup_index_name(index) + TICKER_DATA_OUTPUT_FILE,
         )
 
         # Download data for indices.
-        download([index], True, index, cleanup_name(index) + INDEX_DATA_OUTPUT_FILE)
+        download(
+            [index], True, index, cleanup_index_name(index) + INDEX_DATA_OUTPUT_FILE
+        )
 
 
 def download(symbols: list[str], is_index: bool, category: str, filename: str):
@@ -98,10 +107,12 @@ def download(symbols: list[str], is_index: bool, category: str, filename: str):
             interval="1d",
             auto_adjust=True,
         )
-        data["ticker"] = cleanup_name(ticker)
+        data["ticker"] = cleanup_ticker_name(ticker)
         data["segment"] = "EQ"
-        data["category"] = cleanup_name(category)
+        data["category"] = cleanup_index_name(category)
         if is_index:
+            # Normalize index name.
+            data["ticker"] = cleanup_index_name(ticker)
             data["segment"] = "INDEX"
         df_list.append(data)
 
@@ -112,9 +123,13 @@ def download(symbols: list[str], is_index: bool, category: str, filename: str):
     df.to_csv(path.join(args.dir, filename))
 
 
-def cleanup_name(ticker: str) -> str:
-    ticker = ticker.removeprefix("^")
+def cleanup_ticker_name(ticker: str) -> str:
     ticker = ticker.removesuffix(".NS")
+    return ticker
+
+
+def cleanup_index_name(ticker: str) -> str:
+    ticker = INDEX_HUMAN_SYMBOLS.get(ticker)
     return ticker
 
 
