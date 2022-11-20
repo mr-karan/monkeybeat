@@ -65,7 +65,7 @@ func initClickhouse(ko *koanf.Koanf) (driver.Conn, error) {
 		Addr:        []string{fmt.Sprintf("%s:%d", ko.String("db.host"), ko.Int("db.port"))},
 		DialTimeout: time.Second * 5,
 		ReadTimeout: time.Minute * 1,
-		Debug:       false,
+		Debug:       ko.Bool("db.debug"),
 		Auth: clickhouse.Auth{
 			Database: ko.String("db.name"),
 			Username: ko.String("db.user"),

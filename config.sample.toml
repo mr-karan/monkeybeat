@@ -13,3 +13,4 @@ port = 9000
 name = "monkeybeat"
 user = ""
 password = ""
+debug = false

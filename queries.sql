@@ -11,10 +11,10 @@ SELECT groupArraySample($1)(distinct tradingsymbol) AS stocks FROM monkeybeat.pr
 -- $2: symbols
 WITH
 start AS (
-	SELECT date FROM monkeybeat.prices WHERE toDate(date)>=today() - INTERVAL $1 DAY ORDER BY date ASC LIMIT 1
+	SELECT date FROM monkeybeat.prices WHERE toDate(date)>=today() - INTERVAL $1 DAY AND (tradingsymbol IN ($2)) ORDER BY date ASC LIMIT 1
 ),
 end AS (
-	SELECT date FROM monkeybeat.prices WHERE toDate(date)>=today() - INTERVAL $1 DAY ORDER BY date DESC LIMIT 1
+	SELECT date FROM monkeybeat.prices WHERE toDate(date)>=today() - INTERVAL $1 DAY AND (tradingsymbol IN ($2)) ORDER BY date DESC LIMIT 1
 ),
 old AS
 (
