@@ -27,7 +27,7 @@
                 <td data-label="6M">{{ index .AvgPortfolioReturns 180 | FormatNumber | Color | SafeHTML}}</td>
                 <td data-label="1Y">{{ index .AvgPortfolioReturns 365 | FormatNumber | Color | SafeHTML}}</td>
                 <td data-label="3Y">{{ index .AvgPortfolioReturns 1095 | FormatNumber | Color | SafeHTML}}</td>
-                <td data-label="3Y">{{ index .AvgPortfolioReturns 1825 | FormatNumber | Color | SafeHTML}}</td>
+                <td data-label="5Y">{{ index .AvgPortfolioReturns 1825 | FormatNumber | Color | SafeHTML}}</td>
             </tr>
             <tr>
                 <td data-label="Name">{{.Category}}</td>
@@ -35,7 +35,7 @@
                 <td data-label="6M">{{ index .AvgIndexReturns 180 | FormatNumber | Color | SafeHTML}}</td>
                 <td data-label="1Y">{{ index .AvgIndexReturns 365 | FormatNumber | Color | SafeHTML}}</td>
                 <td data-label="3Y">{{ index .AvgIndexReturns 1095 | FormatNumber | Color | SafeHTML}}</td>
-                <td data-label="3Y">{{ index .AvgIndexReturns 1825 | FormatNumber | Color | SafeHTML}}</td>
+                <td data-label="5Y">{{ index .AvgIndexReturns 1825 | FormatNumber | Color | SafeHTML}}</td>
             </tr>
         </tbody>
     </table>

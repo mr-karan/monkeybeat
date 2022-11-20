@@ -149,18 +149,18 @@ func (app *App) getLink(uuid string) (portfolioTpl, error) {
 
 // computeAvg iterates on the change percent in Returns and computes an average.
 func computeAvg(ret []Returns) float64 {
+	total := 0.0
 	if len(ret) == 0 {
-		return 0.0
+		return total
 	}
 
-	total := 0.0
 	for _, r := range ret {
 		total += r.Percent
 	}
 	return total / float64(len((ret)))
 }
 
-// validIndex loops over a list of valid index symbol and returns false if it's an unknown symbol.
+// validIndex loops over a list of valid index symbols and returns false if it's an unknown symbol.
 func validIndex(i string) bool {
 	for _, idx := range indexSymbols {
 		if idx == i {
