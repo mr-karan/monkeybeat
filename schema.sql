@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS `monkeybeat`.`prices` (
     `segment` LowCardinality(String),
     `close` Float64
 ) ENGINE = ReplacingMergeTree()
-ORDER BY (tradingsymbol, toYYYYMMDD(date));
+ORDER BY (segment,category,tradingsymbol,toYYYYMMDD(date));
 
 CREATE TABLE IF NOT EXISTS `monkeybeat`.`link` (
     `timestamp` Datetime('Asia/Kolkata'),
@@ -15,4 +15,4 @@ CREATE TABLE IF NOT EXISTS `monkeybeat`.`link` (
     `portfolio` String
 ) ENGINE = MergeTree()
 ORDER BY (toYYYYMMDD(timestamp))
-TTL timestamp + INTERVAL 1 MONTH;
+TTL timestamp + INTERVAL 1 WEEK;
