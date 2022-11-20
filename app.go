@@ -21,7 +21,7 @@ const (
 var (
 	// Time periods in days to calculate returns.
 	// NOTE: If the values are changed here, they must be updated in HTML templates as well.
-	returnPeriods = []int{30, 180, 360, 1080}
+	returnPeriods = []int{30, 180, 365, 1095, 1825}
 	indexSymbols  = []string{"NIFTY50", "NIFTY500", "NASDAQ100", "SP500"}
 )
 
@@ -149,6 +149,10 @@ func (app *App) getLink(uuid string) (portfolioTpl, error) {
 
 // computeAvg iterates on the change percent in Returns and computes an average.
 func computeAvg(ret []Returns) float64 {
+	if len(ret) == 0 {
+		return 0.0
+	}
+
 	total := 0.0
 	for _, r := range ret {
 		total += r.Percent

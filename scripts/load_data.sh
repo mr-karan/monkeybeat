@@ -9,7 +9,7 @@ cd "$(dirname "$0")"
 TODAY_DATE="$(date --iso-8601)"
 
 # From and To date to backfill the data for seeding DB.
-FROM_DATE="${MONKEY_BEAT_FROM_DATE:-2019-01-01}"
+FROM_DATE="${MONKEY_BEAT_FROM_DATE:-2017-01-01}"
 TO_DATE="${MONKEY_BEAT_TO_DATE:-${TODAY_DATE}}"
 
 # Directory to temporary store the bhav copy files.
@@ -17,7 +17,7 @@ OUTPUT_DIR="data"
 
 main() {
     # Create the output directory to store the files.
-    # rm -rf ${OUTPUT_DIR}
+    rm -rf ${OUTPUT_DIR}
     mkdir -p ${OUTPUT_DIR}
 
     echo "📥 Downloading data for period ${FROM_DATE} - ${TO_DATE}"

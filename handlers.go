@@ -76,7 +76,13 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 	var (
 		app = r.Context().Value("app").(*App)
 	)
-	app.tpl.ExecuteTemplate(w, "index", nil)
+
+	if err := app.tpl.ExecuteTemplate(w, "index", nil); err != nil {
+		app.lo.Error("error rendering template", "error", err)
+		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
+		return
+	}
+
 }
 
 // handlePortfolio serves the portfolio page.
@@ -104,7 +110,12 @@ func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 		}
 		// Set the UUID in the template.
 		portfolioTpl.ShareID = uuid
-		app.tpl.ExecuteTemplate(w, "portfolio", portfolioTpl)
+
+		if err := app.tpl.ExecuteTemplate(w, "portfolio", portfolioTpl); err != nil {
+			app.lo.Error("error rendering template", "error", err)
+			sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
+			return
+		}
 		return
 	}
 
@@ -163,13 +174,13 @@ func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch the daily returns over 3 years.
-	dailyPortfolioReturns, err = app.getDailyValue(stocks, 1080)
+	dailyPortfolioReturns, err = app.getDailyValue(stocks, 1825)
 	if err != nil {
 		app.lo.Error("error fetching daily returns", "error", err)
 		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
 		return
 	}
-	dailyIndexReturns, err = app.getDailyValue([]string{category}, 1080)
+	dailyIndexReturns, err = app.getDailyValue([]string{category}, 1825)
 	if err != nil {
 		app.lo.Error("error fetching daily returns", "error", err)
 		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
@@ -202,5 +213,9 @@ func handlePortfolio(w http.ResponseWriter, r *http.Request) {
 	}
 	data.ShareID = id
 
-	app.tpl.ExecuteTemplate(w, "portfolio", data)
+	if err := app.tpl.ExecuteTemplate(w, "portfolio", data); err != nil {
+		app.lo.Error("error rendering template", "error", err)
+		sendErrorResponse(w, "Internal Server Error.", http.StatusInternalServerError, nil)
+		return
+	}
 }

@@ -82,6 +82,15 @@ func main() {
 			)
 			return waURL + txt
 		},
+		"YFinanceLink": func(ticker string, category string) string {
+			baseURL := "https://finance.yahoo.com/quote/"
+			switch category {
+			case "NIFTY50", "NIFTY500":
+				return baseURL + ticker + ".NS"
+			default:
+				return baseURL + ticker
+			}
+		},
 	}
 	tpl, err := template.New("static").Funcs(funcMap).ParseFS(staticDir, "static/*.html")
 	if err != nil {
