@@ -34,6 +34,23 @@ header a {
     text-decoration: none;
 }
 
+
+.logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo img {
+    width: 200px;
+    height: auto;
+}
+
+.logo p {
+    display: inline;
+    font-size: 3rem;
+}
+
 h1 {
     font-size: 3rem;
     line-height: 2.4rem;
@@ -56,7 +73,7 @@ a:hover {
 
 .container {
     max-width: 800px;
-    margin: 60px auto 0 auto;
+    margin: 30px auto 0 auto;
     position: relative;
     min-height: 90vh;
 }
@@ -204,6 +221,7 @@ footer span {
 }
 
 
+
 @media(max-width: 700px) {
 
     html,
@@ -263,5 +281,9 @@ footer span {
 
     .field {
         margin: 15px 0;
+    }
+
+    .logo {
+        flex-direction: column;
     }
 }

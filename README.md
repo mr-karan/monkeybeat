@@ -17,3 +17,7 @@ NOTE: If you don't have `clickhouse-client` on the local machine, you can use:
 ```bash
 alias clickhouse-client="docker exec -it clickhouse clickhouse-client"
 ```
+
+## Contributors
+
+- [@hashfyre](https://twitter.com/hashfyre) contributed the lovely [logo](./static/logo.png) for Monkeybeat.

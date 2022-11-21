@@ -12,6 +12,13 @@
         content="Generate a portfolio of randomly selected stocks from an index and see if it beats the underlying benchmark">
     <meta name="author" content="Karan Sharma">
     <meta name="keywords" content="stocks,returns,equity,portfolio,nasdaq,nifty">
+
+    <meta property="og:title" content="MonkeyBeat">
+    <meta property="og:type" content="website" />
+    <meta property="og:description" content="Generate a portfolio of randomly selected stocks from an index and see if it beats the underlying benchmark.">
+    <meta property="og:image" content="/static/logo.png">
+    <meta name="twitter:card" content="/static/logo.png">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
@@ -23,9 +30,12 @@
 <body>
     <div class="container">
         <header>
-            <h1><a href="/">MonkeyBeat</a></h1>
+               <a class="logo" href="/">
+               <img alt="MonkeyBeat" src="/static/logo.png" />
+               <p>MonkeyBeat</p>
+            </a>
             <p>Can an equi-weighted portfolio of 10 stocks randomly selected from an index beat the underlying benchmark? Find Out!</p>
-        </header>
+         </header>
         <main>
             <section class="generate">
                <form method="get" action="/portfolio" class="box">
