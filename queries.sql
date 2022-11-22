@@ -58,7 +58,7 @@ WITH
         WHERE (tradingsymbol IN ($1)) AND (date = (
             SELECT date
             FROM monkeybeat.prices
-            WHERE date >= (today() - toIntervalDay($3))
+            WHERE date >= (today() - toIntervalDay($3)) AND (tradingsymbol IN ($1))
             ORDER BY date ASC
             LIMIT 1
         ))
