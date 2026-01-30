@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="glass-card shadow-lg shadow-primary-100/50 rounded-2xl p-8 max-w-lg mx-auto border border-rose-100">
+    <div class="text-center">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-rose-50 mb-4">
+            <i class="bi-exclamation-triangle text-rose-500 text-2xl"></i>
+        </div>
+        <h3 class="text-xl font-semibold text-primary-900 mb-2">Something went wrong</h3>
+        <p class="text-primary-600/80 mb-6">{{ error }}</p>
+        <a href="/" class="inline-flex items-center gap-2 bg-primary-600 text-white px-5 py-2.5 rounded-xl hover:bg-primary-700 transition-colors duration-200 font-medium cursor-pointer">
+            <i class="bi-arrow-left"></i> Back to Home
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,316 @@
+{% if not partial %}
+{% extends "base.html" %}
+{% endif %}
+
+{% block content %}
+<div class="card rounded-xl p-4 mb-6">
+    <div class="flex items-center justify-center gap-4 flex-wrap">
+        <p class="text-dark-200 text-sm">Share this portfolio</p>
+        <div class="flex gap-2">
+            <a class="inline-flex items-center justify-center w-9 h-9 bg-dark-700 hover:bg-dark-600 rounded-lg transition-colors duration-200 cursor-pointer" rel="noreferrer noopener nofollow" target="_blank" href="/portfolio/{{ share_id }}">
+                <i class="bi-link-45deg text-dark-100 text-lg"></i>
+            </a>
+            <a class="inline-flex items-center justify-center w-9 h-9 bg-dark-700 hover:bg-dark-600 rounded-lg transition-colors duration-200 cursor-pointer" rel="noreferrer noopener nofollow" target="_blank" href="{{ share_id | x_share }}">
+                <i class="bi-twitter-x text-dark-100"></i>
+            </a>
+            <a class="inline-flex items-center justify-center w-9 h-9 bg-dark-700 hover:bg-dark-600 rounded-lg transition-colors duration-200 cursor-pointer" rel="noreferrer noopener nofollow" target="_blank" href="{{ share_id | whatsapp_share }}">
+                <i class="bi-whatsapp text-dark-100"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<section class="card rounded-xl p-6 mb-6">
+    <h3 class="text-lg font-medium text-white mb-4">Summary</h3>
+    <div class="overflow-x-auto">
+        <table class="min-w-full">
+            <thead>
+                <tr class="border-b border-dark-600">
+                    <th class="px-4 py-3 text-left text-xs font-medium text-dark-300 uppercase tracking-wider">Name</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-dark-300 uppercase tracking-wider">1M</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-dark-300 uppercase tracking-wider">6M</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-dark-300 uppercase tracking-wider">1Y</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-dark-300 uppercase tracking-wider">3Y</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-dark-300 uppercase tracking-wider">5Y</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-dark-700">
+                <tr class="hover:bg-dark-700/50 transition-colors duration-100">
+                    <td class="px-4 py-3.5 whitespace-nowrap text-sm font-medium text-white" data-label="Name">Portfolio</td>
+                    <td class="px-4 py-3.5 whitespace-nowrap text-sm font-medium" data-label="1M">{{ avg_portfolio_returns[30] | colorize | safe }}</td>
+                    <td class="px-4 py-3.5 whitespace-nowrap text-sm font-medium" data-label="6M">{{ avg_portfolio_returns[180] | colorize | safe }}</td>
+                    <td class="px-4 py-3.5 whitespace-nowrap text-sm font-medium" data-label="1Y">{{ avg_portfolio_returns[365] | colorize | safe }}</td>
+                    <td class="px-4 py-3.5 whitespace-nowrap text-sm font-medium" data-label="3Y">{{ avg_portfolio_returns[1095] | colorize | safe }}</td>
+                    <td class="px-4 py-3.5 whitespace-nowrap text-sm font-medium" data-label="5Y">{{ avg_portfolio_returns[1825] | colorize | safe }}</td>
+                </tr>
+                <tr class="hover:bg-dark-700/50 transition-colors duration-100">
+                    <td class="px-4 py-3.5 whitespace-nowrap text-sm font-medium text-white" data-label="Name">{{ category }}</td>
+                    <td class="px-4 py-3.5 whitespace-nowrap text-sm font-medium" data-label="1M">{{ avg_index_returns[30] | colorize | safe }}</td>
+                    <td class="px-4 py-3.5 whitespace-nowrap text-sm font-medium" data-label="6M">{{ avg_index_returns[180] | colorize | safe }}</td>
+                    <td class="px-4 py-3.5 whitespace-nowrap text-sm font-medium" data-label="1Y">{{ avg_index_returns[365] | colorize | safe }}</td>
+                    <td class="px-4 py-3.5 whitespace-nowrap text-sm font-medium" data-label="3Y">{{ avg_index_returns[1095] | colorize | safe }}</td>
+                    <td class="px-4 py-3.5 whitespace-nowrap text-sm font-medium" data-label="5Y">{{ avg_index_returns[1825] | colorize | safe }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="card-highlight rounded-xl p-6 mb-6 {% if current_portfolio_amount > current_index_amount %}glow-green{% else %}glow-red{% endif %}">
+    {% set diff = current_portfolio_amount - current_index_amount %}
+    {% set monkey_won = current_portfolio_amount > current_index_amount %}
+    
+    <div class="text-center mb-6">
+        {% if monkey_won %}
+        <div class="inline-flex items-center gap-2 text-neon-green text-lg font-semibold mb-2">
+            <i class="bi-trophy-fill"></i> The Monkey Won!
+        </div>
+        <p class="text-dark-100 text-sm">Your random picks beat the index by <span class="font-semibold text-neon-green">₹{{ "{:,.0f}".format(diff) }}</span></p>
+        {% else %}
+        <div class="inline-flex items-center gap-2 text-neon-red text-lg font-semibold mb-2">
+            <i class="bi-graph-down"></i> Index Wins This Time
+        </div>
+        <p class="text-dark-100 text-sm">The index beat your picks by <span class="font-semibold text-neon-red">₹{{ "{:,.0f}".format(diff|abs) }}</span></p>
+        {% endif %}
+    </div>
+
+    <h3 class="text-base font-medium text-dark-100 mb-4 text-center">₹10,000 invested 5 years ago is now worth...</h3>
+    
+    <div class="grid md:grid-cols-2 gap-4 mb-6">
+        <div class="bg-dark-800 rounded-xl p-5 text-center border {% if monkey_won %}border-neon-green/30{% else %}border-dark-600{% endif %} transition-all duration-200">
+            <div class="text-xs text-dark-300 uppercase tracking-wider font-medium mb-1">Your Portfolio</div>
+            <div class="text-3xl font-bold {% if monkey_won %}text-neon-green{% else %}text-white{% endif %}">
+                ₹{{ "{:,.0f}".format(current_portfolio_amount) }}
+            </div>
+            <div class="text-sm mt-1 font-medium {% if avg_portfolio_returns[1825] >= 0 %}text-neon-green{% else %}text-neon-red{% endif %}">
+                {{ "{:+.1f}".format(avg_portfolio_returns[1825]) }}%
+            </div>
+        </div>
+        <div class="bg-dark-800 rounded-xl p-5 text-center border {% if not monkey_won %}border-neon-blue/30{% else %}border-dark-600{% endif %} transition-all duration-200">
+            <div class="text-xs text-dark-300 uppercase tracking-wider font-medium mb-1">{{ category }}</div>
+            <div class="text-3xl font-bold {% if not monkey_won %}text-neon-blue{% else %}text-white{% endif %}">
+                ₹{{ "{:,.0f}".format(current_index_amount) }}
+            </div>
+            <div class="text-sm mt-1 font-medium {% if avg_index_returns[1825] >= 0 %}text-neon-green{% else %}text-neon-red{% endif %}">
+                {{ "{:+.1f}".format(avg_index_returns[1825]) }}%
+            </div>
+        </div>
+    </div>
+
+    {% if monkey_won %}
+    <p class="text-center text-dark-200 text-sm">
+        That's <span class="font-medium text-neon-green">{{ "{:.1f}".format((current_portfolio_amount / current_index_amount - 1) * 100) }}% more</span> than simply tracking the index.
+    </p>
+    {% else %}
+    <p class="text-center text-dark-200 text-sm">
+        Try again! With enough attempts, randomness can work in your favor.
+    </p>
+    {% endif %}
+
+    <div id="chart" class="mt-6"></div>
+</section>
+
+{% if simulation %}
+<section class="card rounded-xl p-6 mb-6">
+    <h3 class="text-base font-medium text-white mb-4 flex items-center gap-2">
+        <i class="bi-dice-5 text-dark-300"></i> The Randomness Factor
+    </h3>
+    <p class="text-dark-300 text-sm mb-4">We ran {{ simulation.num_simulations }} random portfolio simulations to see how yours stacks up.</p>
+    
+    <div class="grid md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-dark-800 rounded-xl p-4 text-center border border-dark-600">
+            <div class="text-3xl font-bold {% if simulation.win_rate >= 50 %}text-neon-green{% else %}text-dark-100{% endif %}">
+                {{ simulation.win_count }}/{{ simulation.num_simulations }}
+            </div>
+            <div class="text-sm text-dark-300 mt-1">beat the index</div>
+            <div class="mt-3 w-full bg-dark-600 rounded-full h-1">
+                <div class="{% if simulation.win_rate >= 50 %}bg-neon-green{% else %}bg-dark-400{% endif %} h-1 rounded-full transition-all duration-300" style="width: {{ simulation.win_rate }}%"></div>
+            </div>
+            <div class="text-xs text-dark-400 mt-1">{{ simulation.win_rate }}% win rate</div>
+        </div>
+        
+        <div class="bg-dark-800 rounded-xl p-4 text-center border border-dark-600">
+            <div class="text-3xl font-bold text-neon-purple">#{{ simulation.user_rank }}</div>
+            <div class="text-sm text-dark-300 mt-1">your rank</div>
+            <div class="text-xs text-dark-400 mt-3">Top {{ "{:.0f}".format(100 - simulation.user_percentile) }}%</div>
+        </div>
+        
+        <div class="bg-dark-800 rounded-xl p-4 text-center border border-dark-600">
+            <div class="text-xs text-dark-400 uppercase tracking-wide mb-2">5Y Return Range</div>
+            <div class="flex items-center justify-center gap-2">
+                <span class="text-neon-red font-medium">{{ "{:+.0f}%".format(simulation.min_return) }}</span>
+                <i class="bi-arrow-right text-dark-500 text-xs"></i>
+                <span class="text-neon-green font-medium">{{ "{:+.0f}%".format(simulation.max_return) }}</span>
+            </div>
+            <div class="text-xs text-dark-400 mt-3">Median: {{ "{:+.0f}%".format(simulation.median_return) }}</div>
+        </div>
+    </div>
+
+    <div class="bg-dark-800 rounded-xl p-4 border border-dark-600">
+        <div class="text-sm text-dark-200 mb-4">Where you stand among {{ simulation.num_simulations }} random portfolios</div>
+        <div id="distribution-chart"></div>
+    </div>
+</section>
+{% endif %}
+
+<section class="card rounded-xl p-6 mb-6">
+    <h3 class="text-lg font-medium text-white mb-4">Portfolio Details</h3>
+    <div class="overflow-x-auto">
+        <table class="min-w-full">
+            <thead>
+                <tr class="border-b border-dark-600">
+                    <th class="px-4 py-3 text-left text-xs font-medium text-dark-300 uppercase tracking-wider">Stock</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-dark-300 uppercase tracking-wider">1M</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-dark-300 uppercase tracking-wider">6M</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-dark-300 uppercase tracking-wider">1Y</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-dark-300 uppercase tracking-wider">3Y</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-dark-300 uppercase tracking-wider">5Y</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-dark-700">
+                {% for stock, returns in avg_stock_returns.items() %}
+                <tr class="hover:bg-dark-700/50 transition-colors duration-100">
+                    <td class="px-4 py-3.5 whitespace-nowrap text-sm font-medium" data-label="Stock">
+                        <a rel="noreferrer noopener nofollow" target="_blank" href="{{ stock | yfinance_link(category) }}" class="text-neon-blue hover:text-white transition-colors duration-200 cursor-pointer">{{ stock }}</a>
+                    </td>
+                    <td class="px-4 py-3.5 whitespace-nowrap text-sm font-medium" data-label="1M">{{ returns[30] | colorize | safe }}</td>
+                    <td class="px-4 py-3.5 whitespace-nowrap text-sm font-medium" data-label="6M">{{ returns[180] | colorize | safe }}</td>
+                    <td class="px-4 py-3.5 whitespace-nowrap text-sm font-medium" data-label="1Y">{{ returns[365] | colorize | safe }}</td>
+                    <td class="px-4 py-3.5 whitespace-nowrap text-sm font-medium" data-label="3Y">{{ returns[1095] | colorize | safe }}</td>
+                    <td class="px-4 py-3.5 whitespace-nowrap text-sm font-medium" data-label="5Y">{{ returns[1825] | colorize | safe }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="bg-dark-800/50 border border-dark-700 p-5 rounded-xl">
+    <h4 class="text-sm font-medium text-dark-200 mb-2 flex items-center gap-2">
+        <i class="bi-info-circle text-dark-400"></i> Important Notes
+    </h4>
+    <ul class="space-y-1.5 text-xs text-dark-400">
+        <li>Stocks are from the latest index constituents and don't reflect historical changes.</li>
+        <li>Returns shown are point-to-point, not rolling returns.</li>
+        <li>This is a fun simulation tool. Data may have gaps.</li>
+    </ul>
+</section>
+
+<script>
+(function() {
+    var portfolioData = [{% for item in daily_portfolio_returns %}{ time: "{{ item.date }}", value: {{ item.current_invested }} }{% if not loop.last %},{% endif %}{% endfor %}];
+    var indexData = [{% for item in daily_index_returns %}{ time: "{{ item.date }}", value: {{ item.current_invested }} }{% if not loop.last %},{% endif %}{% endfor %}];
+
+    var chartContainer = document.getElementById('chart');
+    chartContainer.style.height = '380px';
+    
+    var chart = LightweightCharts.createChart(chartContainer, {
+        layout: {
+            background: { type: 'solid', color: 'transparent' },
+            textColor: '#888888',
+            fontFamily: 'Inter, system-ui, sans-serif'
+        },
+        grid: {
+            vertLines: { color: 'rgba(255,255,255,0.03)' },
+            horzLines: { color: 'rgba(255,255,255,0.03)' }
+        },
+        rightPriceScale: {
+            borderColor: 'rgba(255,255,255,0.1)',
+            scaleMargins: { top: 0.1, bottom: 0.1 }
+        },
+        timeScale: {
+            borderColor: 'rgba(255,255,255,0.1)',
+            timeVisible: false
+        },
+        crosshair: {
+            mode: LightweightCharts.CrosshairMode.Normal,
+            vertLine: { color: '#00ff88', width: 1, style: 2, labelBackgroundColor: '#00ff88' },
+            horzLine: { color: '#00ff88', width: 1, style: 2, labelBackgroundColor: '#00ff88' }
+        },
+        handleScale: { axisPressedMouseMove: true },
+        handleScroll: { vertTouchDrag: true }
+    });
+
+    var portfolioSeries = chart.addSeries(LightweightCharts.AreaSeries, {
+        lineColor: '#00ff88',
+        topColor: 'rgba(0, 255, 136, 0.25)',
+        bottomColor: 'rgba(0, 255, 136, 0.02)',
+        lineWidth: 2,
+        priceFormat: { type: 'custom', formatter: (p) => '₹' + p.toFixed(0) }
+    });
+    portfolioSeries.setData(portfolioData);
+
+    var indexSeries = chart.addSeries(LightweightCharts.AreaSeries, {
+        lineColor: '#00d4ff',
+        topColor: 'rgba(0, 212, 255, 0.15)',
+        bottomColor: 'rgba(0, 212, 255, 0.01)',
+        lineWidth: 2,
+        priceFormat: { type: 'custom', formatter: (p) => '₹' + p.toFixed(0) }
+    });
+    indexSeries.setData(indexData);
+
+    chart.timeScale().fitContent();
+
+    var legend = document.createElement('div');
+    legend.style.cssText = 'display:flex;gap:20px;padding:8px 0;font-size:12px;color:#888;';
+    legend.innerHTML = '<span style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:2px;background:#00ff88;border-radius:1px;"></span>Portfolio</span>' +
+                       '<span style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:2px;background:#00d4ff;border-radius:1px;"></span>{{ category }}</span>';
+    chartContainer.insertBefore(legend, chartContainer.firstChild);
+
+    new ResizeObserver(function(entries) {
+        chart.applyOptions({ width: entries[0].contentRect.width });
+    }).observe(chartContainer);
+
+{% if simulation %}
+    var userReturn = {{ avg_portfolio_returns[1825] | round(1) }};
+    var indexReturn = {{ simulation.index_return }};
+    var minReturn = {{ simulation.min_return }};
+    var maxReturn = {{ simulation.max_return }};
+    var medianReturn = {{ simulation.median_return }};
+    
+    var distContainer = document.getElementById('distribution-chart');
+    var range = maxReturn - minReturn;
+    
+    function getPosition(val) {
+        return ((val - minReturn) / range * 100).toFixed(1);
+    }
+    
+    var userPos = getPosition(userReturn);
+    var indexPos = getPosition(indexReturn);
+    var medianPos = getPosition(medianReturn);
+    
+    var html = '<div style="position:relative;height:60px;margin:8px 0;">';
+    
+    // Track
+    html += '<div style="position:absolute;top:24px;left:0;right:0;height:8px;background:linear-gradient(to right, #ff4757 0%, #666 50%, #00ff88 100%);border-radius:4px;"></div>';
+    
+    // Median marker
+    html += '<div style="position:absolute;top:20px;left:' + medianPos + '%;transform:translateX(-50%);width:2px;height:16px;background:#888;"></div>';
+    html += '<div style="position:absolute;top:40px;left:' + medianPos + '%;transform:translateX(-50%);font-size:9px;color:#666;white-space:nowrap;">median</div>';
+    
+    // Index marker  
+    html += '<div style="position:absolute;top:12px;left:' + indexPos + '%;transform:translateX(-50%);text-align:center;">';
+    html += '<div style="font-size:10px;color:#00d4ff;font-weight:500;">Index</div>';
+    html += '<div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #00d4ff;margin:2px auto;"></div>';
+    html += '</div>';
+    
+    // You marker (on top)
+    html += '<div style="position:absolute;top:12px;left:' + userPos + '%;transform:translateX(-50%);text-align:center;z-index:1;">';
+    html += '<div style="font-size:10px;color:#00ff88;font-weight:600;">You</div>';
+    html += '<div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #00ff88;margin:2px auto;"></div>';
+    html += '</div>';
+    
+    html += '</div>';
+    
+    // Labels
+    html += '<div style="display:flex;justify-content:space-between;font-size:11px;color:#666;margin-top:4px;">';
+    html += '<span style="color:#ff4757;">' + minReturn.toFixed(0) + '%</span>';
+    html += '<span style="color:#888;">← worse · 5Y returns · better →</span>';
+    html += '<span style="color:#00ff88;">' + maxReturn.toFixed(0) + '%</span>';
+    html += '</div>';
+    
+    distContainer.innerHTML = html;
+{% endif %}
+})();
+</script>
+{% endblock %}

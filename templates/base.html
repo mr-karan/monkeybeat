@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>MonkeyBeat | Can a monkey beat your fund manager?</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <meta name="description"
+        content="Generate a portfolio of randomly selected stocks from an index and see if it beats the underlying benchmark">
+    <meta name="author" content="Karan Sharma">
+    <meta name="keywords" content="stocks,returns,equity,portfolio,nifty,nse,india">
+
+    <meta property="og:title" content="MonkeyBeat">
+    <meta property="og:type" content="website" />
+    <meta property="og:description" content="Generate a portfolio of randomly selected stocks from an index and see if it beats the underlying benchmark.">
+    <meta property="og:image" content="/static/logo.png">
+    <meta name="twitter:card" content="/static/logo.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script>htmx.config.allowScriptTags = true;</script>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                    colors: {
+                        dark: { 
+                            950: '#030303',
+                            900: '#0a0a0a', 
+                            800: '#111111', 
+                            700: '#1a1a1a', 
+                            600: '#222222',
+                            500: '#333333',
+                            400: '#444444',
+                            300: '#666666',
+                            200: '#888888',
+                            100: '#aaaaaa'
+                        },
+                        neon: {
+                            green: '#00ff88',
+                            red: '#ff4757',
+                            blue: '#00d4ff',
+                            purple: '#a855f7'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; }
+        .btn-loading { display: none; }
+        .btn-text { display: inline; }
+        form.htmx-request .btn-text { display: none; }
+        form.htmx-request .btn-loading { display: inline-flex !important; }
+        button[disabled] { opacity: 0.7; cursor: not-allowed; }
+        #results { transition: opacity 200ms ease-out; }
+        .htmx-swapping #results { opacity: 0.5; }
+        .card { 
+            background: rgba(255, 255, 255, 0.03); 
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+        }
+        .card-highlight {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glow-green { box-shadow: 0 0 20px rgba(0, 255, 136, 0.15); }
+        .glow-red { box-shadow: 0 0 20px rgba(255, 71, 87, 0.15); }
+    </style>
+</head>
+
+<body class="bg-dark-900 text-white min-h-screen flex flex-col">
+    <div class="container mx-auto px-4 py-16 max-w-4xl flex-1">
+        <header class="text-center mb-16">
+            <a class="inline-flex items-center gap-4 mb-6 group" href="/">
+                <img alt="MonkeyBeat" src="/static/logo.png" class="w-12 h-12 transition-transform duration-300 group-hover:scale-110" />
+                <h1 class="text-3xl font-semibold tracking-tight">MonkeyBeat</h1>
+            </a>
+            <p class="text-lg text-dark-100 max-w-xl mx-auto font-light leading-relaxed">Can 10 randomly selected stocks beat the index?</p>
+        </header>
+        <main>
+            <section class="mb-12">
+                <form hx-get="/portfolio" hx-target="#results" hx-disabled-elt="find button" hx-swap="innerHTML show:#results:top" class="card rounded-2xl p-8 max-w-md mx-auto">
+                    <div class="space-y-6">
+                        <div>
+                            <label for="index" class="block text-sm font-medium text-dark-100 mb-3">Select an index</label>
+                            <select id="index" name="index" class="w-full px-4 py-3 bg-dark-800 border border-dark-500 rounded-xl focus:ring-2 focus:ring-neon-green/50 focus:border-neon-green/50 text-white cursor-pointer transition-all duration-200 outline-none">
+                                <optgroup label="Large Cap">
+                                    <option selected value="NIFTY50">NIFTY 50</option>
+                                    <option value="NIFTYNEXT50">NIFTY Next 50</option>
+                                    <option value="NIFTY100">NIFTY 100</option>
+                                    <option value="NIFTY200">NIFTY 200</option>
+                                    <option value="NIFTY500">NIFTY 500</option>
+                                </optgroup>
+                                <optgroup label="Mid Cap">
+                                    <option value="NIFTYMIDCAP100">NIFTY Midcap 100</option>
+                                    <option value="NIFTYMIDCAP150">NIFTY Midcap 150</option>
+                                </optgroup>
+                                <optgroup label="Small Cap">
+                                    <option value="NIFTYSMALLCAP100">NIFTY Smallcap 100</option>
+                                    <option value="NIFTYSMALLCAP250">NIFTY Smallcap 250</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div>
+                            <button type="submit" class="w-full bg-white text-dark-900 px-6 py-3.5 rounded-xl hover:bg-dark-100 active:bg-dark-200 transition-all duration-200 font-semibold flex items-center justify-center gap-2 cursor-pointer">
+                                <span class="btn-loading items-center gap-2">
+                                    <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span>Generating...</span>
+                                </span>
+                                <span class="btn-text">Generate Portfolio</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </section>
+            <div id="results">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+    <footer class="py-10 text-center border-t border-dark-700">
+        <p class="text-dark-200 text-sm">Made with <span class="text-neon-red">&#9829;</span> by <a href="https://mrkaran.dev" class="text-white hover:text-neon-green transition-colors duration-200">mrkaran</a></p>
+        <p class="mt-3"><a href="https://github.com/mr-karan/monkeybeat" class="text-dark-300 hover:text-white text-sm transition-colors duration-200">Source Code</a></p>
+        <p class="mt-4 text-xs text-dark-400 max-w-md mx-auto">This tool simulates a random portfolio and should not be misconstrued as financial advice.</p>
+    </footer>
+</body>
+
+</html>
