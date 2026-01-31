@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.13"
-# dependencies = ["fastapi>=0.115", "uvicorn>=0.34", "jinja2>=3.1", "duckdb>=1.2", "yfinance>=1.1", "pandas>=2.2"]
+# dependencies = ["fastapi>=0.115", "uvicorn>=0.34", "jinja2>=3.1", "duckdb>=1.2", "yfinance>=1.1", "pandas>=2.2", "apscheduler>=3.10"]
 # ///
 """
 MonkeyBeat - Can a monkey beat your fund manager?
@@ -10,15 +10,21 @@ A single-file FastAPI application that generates random stock portfolios
 and compares their performance against market indices.
 """
 
+import gc
 import json
+import logging
 import os
 import random
+import sys
 import urllib.parse
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
+
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
 
 import duckdb
 import pandas as pd
@@ -364,8 +370,12 @@ class PortfolioData:
 
 
 def get_db() -> duckdb.DuckDBPyConnection:
-    """Get a database connection."""
-    return duckdb.connect(str(DB_PATH))
+    """Get a database connection with memory limits."""
+    conn = duckdb.connect(str(DB_PATH))
+    # Set memory limits to prevent unbounded growth
+    conn.execute("PRAGMA memory_limit='512MB'")
+    conn.execute("PRAGMA threads=4")
+    return conn
 
 
 def init_db() -> None:
@@ -373,19 +383,50 @@ def init_db() -> None:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     with get_db() as conn:
+        # Main prices table - stores daily adjusted close prices
+        # Using (date, category, segment, tradingsymbol) as PK for proper uniqueness
         conn.execute("""
             CREATE TABLE IF NOT EXISTS prices (
-                date DATE,
-                tradingsymbol VARCHAR,
-                category VARCHAR,
-                segment VARCHAR,
-                close DOUBLE
+                date DATE NOT NULL,
+                category VARCHAR NOT NULL,
+                segment VARCHAR NOT NULL,
+                tradingsymbol VARCHAR NOT NULL,
+                close DOUBLE NOT NULL,
+                PRIMARY KEY (date, category, segment, tradingsymbol)
             )
         """)
+
+        # Index optimized for our common query pattern (category first for selectivity)
         conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_prices 
-            ON prices(segment, category, tradingsymbol, date)
+            CREATE INDEX IF NOT EXISTS idx_prices_lookup 
+            ON prices(category, segment, tradingsymbol, date)
         """)
+
+        # Symbols table - distinct tickers per index for fast random selection
+        # Avoids scanning millions of price rows just to pick 10 random stocks
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS symbols (
+                category VARCHAR NOT NULL,
+                segment VARCHAR NOT NULL,
+                tradingsymbol VARCHAR NOT NULL,
+                PRIMARY KEY (category, segment, tradingsymbol)
+            )
+        """)
+
+        # Ingestion state - tracks data freshness per index
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS ingestion_state (
+                category VARCHAR NOT NULL,
+                segment VARCHAR NOT NULL,
+                last_updated TIMESTAMP,
+                last_trading_date DATE,
+                status VARCHAR,
+                error VARCHAR,
+                PRIMARY KEY (category, segment)
+            )
+        """)
+
+        # Shared portfolio links
         conn.execute("""
             CREATE TABLE IF NOT EXISTS link (
                 timestamp TIMESTAMP,
@@ -394,27 +435,54 @@ def init_db() -> None:
             )
         """)
 
+        # Update statistics for query optimizer
+        conn.execute("ANALYZE")
 
-def is_data_stale(category: str) -> bool:
-    """Check if data needs to be refreshed (last date < yesterday)."""
-    yesterday = date.today() - timedelta(days=1)
 
+def has_data(category: str) -> bool:
+    """Check if we have ANY data for this category."""
     with get_db() as conn:
         result = conn.execute(
-            """
-            SELECT MAX(date) FROM prices WHERE category = ?
-        """,
+            "SELECT COUNT(*) FROM prices WHERE category = ?",
+            [category],
+        ).fetchone()
+        return result is not None and result[0] > 0
+
+
+def get_last_data_date(category: str) -> date | None:
+    """Get the most recent data date for a category."""
+    with get_db() as conn:
+        result = conn.execute(
+            "SELECT MAX(date) FROM prices WHERE category = ?",
             [category],
         ).fetchone()
 
         if result is None or result[0] is None:
-            return True
+            return None
 
         last_date = result[0]
         if isinstance(last_date, str):
             last_date = datetime.strptime(last_date, "%Y-%m-%d").date()
+        return last_date
 
-        return last_date < yesterday
+
+def needs_update(category: str) -> bool:
+    """Check if data needs updating (last date is before today, accounting for weekends)."""
+    last_date = get_last_data_date(category)
+    if last_date is None:
+        return True
+
+    today = date.today()
+    # If last data is from today, no update needed
+    if last_date >= today:
+        return False
+
+    # If it's Monday, data from Friday is acceptable
+    if today.weekday() == 0 and last_date >= today - timedelta(days=3):
+        return False
+
+    # Otherwise, if last date is yesterday or more recent, we're fine
+    return last_date < today - timedelta(days=1)
 
 
 def load_stock_symbols(csv_path: str) -> list[str]:
@@ -423,8 +491,15 @@ def load_stock_symbols(csv_path: str) -> list[str]:
     return df["Symbol"].tolist()
 
 
-def fetch_and_store_data(category: str) -> None:
-    """Fetch stock data from yfinance and store in DuckDB."""
+def fetch_and_store_data(category: str, incremental: bool = False) -> None:
+    """
+    Fetch stock data from yfinance and store in DuckDB.
+
+    Args:
+        category: Index category to fetch
+        incremental: If True, only fetch data after the last stored date.
+                    If False, fetch full 6-year history (used for initial load).
+    """
     config = INDICES[category]
     symbols = load_stock_symbols(config["csv"])
     suffix = config["suffix"]
@@ -435,85 +510,221 @@ def fetch_and_store_data(category: str) -> None:
     # Add index symbol
     tickers.append(index_symbol)
 
-    # Calculate date range (6 years back)
+    # Calculate date range
     end_date = date.today()
-    start_date = end_date - timedelta(days=365 * 6)
 
-    print(
-        f"Fetching data for {category}: {len(tickers)} tickers from {start_date} to {end_date}"
+    if incremental:
+        last_date = get_last_data_date(category)
+        if last_date is None:
+            # No data exists, do full fetch
+            start_date = end_date - timedelta(days=365 * 6)
+            incremental = False
+        else:
+            # Fetch from day after last date
+            start_date = last_date + timedelta(days=1)
+            if start_date > end_date:
+                logging.info(f"{category}: Data already up to date")
+                return
+    else:
+        start_date = end_date - timedelta(days=365 * 6)
+
+    logging.info(
+        f"Fetching {'incremental' if incremental else 'full'} data for {category}: "
+        f"{len(tickers)} tickers from {start_date} to {end_date}"
     )
 
-    # Fetch data in batch
-    data = yf.download(
-        tickers,
-        start=start_date.isoformat(),
-        end=end_date.isoformat(),
-        progress=True,
-        group_by="ticker",
-        auto_adjust=True,
-    )
+    # Fetch data in batch with parallel threads for better throughput
+    try:
+        data = yf.download(
+            tickers,
+            start=start_date.isoformat(),
+            end=end_date.isoformat(),
+            progress=True,
+            group_by="ticker",
+            auto_adjust=True,
+            threads=True,  # Enable parallel downloads
+        )
+    except Exception as e:
+        logging.error(f"Failed to download data for {category}: {e}")
+        return
 
     if data.empty:
-        print(f"No data fetched for {category}")
+        logging.info(f"No new data for {category}")
         return
 
     # Prepare records for insertion
     records = []
 
-    with get_db() as conn:
-        # Clear existing data for this category
-        conn.execute("DELETE FROM prices WHERE category = ?", [category])
+    for ticker in tickers:
+        try:
+            if len(tickers) == 1:
+                ticker_data = data
+            else:
+                ticker_data = data[ticker]
 
-        for ticker in tickers:
-            try:
-                if len(tickers) == 1:
-                    ticker_data = data
-                else:
-                    ticker_data = data[ticker]
-
-                if ticker_data.empty:
-                    continue
-
-                # Determine segment and trading symbol
-                if ticker == index_symbol:
-                    segment = "INDEX"
-                    tradingsymbol = index_symbol
-                else:
-                    segment = "EQ"
-                    # Remove suffix to get clean symbol
-                    tradingsymbol = ticker.replace(suffix, "")
-
-                for idx, row in ticker_data.iterrows():
-                    if pd.notna(row.get("Close")):
-                        records.append(
-                            (
-                                idx.date() if hasattr(idx, "date") else idx,
-                                tradingsymbol,
-                                category,
-                                segment,
-                                float(row["Close"]),
-                            )
-                        )
-            except (KeyError, TypeError) as e:
-                print(f"Error processing {ticker}: {e}")
+            if ticker_data.empty:
                 continue
 
-        if records:
-            conn.executemany(
-                """
-                INSERT INTO prices (date, tradingsymbol, category, segment, close)
-                VALUES (?, ?, ?, ?, ?)
-            """,
-                records,
-            )
-            print(f"Inserted {len(records)} records for {category}")
+            # Determine segment and trading symbol
+            if ticker == index_symbol:
+                segment = "INDEX"
+                tradingsymbol = index_symbol
+            else:
+                segment = "EQ"
+                # Remove suffix to get clean symbol
+                tradingsymbol = ticker.replace(suffix, "")
+
+            for idx, row in ticker_data.iterrows():
+                if pd.notna(row.get("Close")):
+                    records.append(
+                        (
+                            idx.date() if hasattr(idx, "date") else idx,
+                            category,
+                            segment,
+                            tradingsymbol,
+                            float(row["Close"]),
+                        )
+                    )
+        except (KeyError, TypeError) as e:
+            logging.warning(f"Error processing {ticker}: {e}")
+            continue
+
+    if records:
+        last_trading_date = max(r[0] for r in records)
+        logging.info(f"{category}: Inserting {len(records)} records into database...")
+        sys.stdout.flush()
+
+        try:
+            conn = get_db()
+            try:
+                if not incremental:
+                    # Full refresh: delete existing data first
+                    conn.execute("DELETE FROM prices WHERE category = ?", [category])
+                    conn.execute("DELETE FROM symbols WHERE category = ?", [category])
+
+                # Insert price data in batches to avoid memory issues
+                BATCH_SIZE = 50000
+                for i in range(0, len(records), BATCH_SIZE):
+                    batch = records[i : i + BATCH_SIZE]
+                    conn.executemany(
+                        """
+                        INSERT INTO prices (date, category, segment, tradingsymbol, close)
+                        VALUES (?, ?, ?, ?, ?)
+                        ON CONFLICT (date, category, segment, tradingsymbol) DO UPDATE SET
+                            close = EXCLUDED.close
+                        """,
+                        batch,
+                    )
+                    logging.info(
+                        f"{category}: Inserted batch {i // BATCH_SIZE + 1} ({min(i + BATCH_SIZE, len(records))}/{len(records)} records)"
+                    )
+                    sys.stdout.flush()
+
+                # Populate symbols table (distinct tickers for fast random selection)
+                conn.execute(
+                    """
+                    INSERT INTO symbols (category, segment, tradingsymbol)
+                    SELECT DISTINCT category, segment, tradingsymbol
+                    FROM prices
+                    WHERE category = ?
+                    ON CONFLICT DO NOTHING
+                    """,
+                    [category],
+                )
+
+                # Update ingestion state
+                conn.execute(
+                    """
+                    INSERT INTO ingestion_state (category, segment, last_updated, last_trading_date, status)
+                    VALUES (?, 'EQ', NOW(), ?, 'success')
+                    ON CONFLICT (category, segment) DO UPDATE SET
+                        last_updated = NOW(),
+                        last_trading_date = EXCLUDED.last_trading_date,
+                        status = 'success',
+                        error = NULL
+                    """,
+                    [category, last_trading_date],
+                )
+
+                logging.info(
+                    f"{'Updated' if incremental else 'Inserted'} {len(records)} records for {category}"
+                )
+                sys.stdout.flush()
+            finally:
+                conn.close()
+        except Exception as e:
+            logging.error(f"{category}: Database error during insertion: {e}")
+            import traceback
+
+            logging.error(f"{category}: Traceback:\n{traceback.format_exc()}")
+            sys.stdout.flush()
+            raise
+
+    # Clean up memory
+    del data
+    del records
+    gc.collect()
 
 
-def ensure_data_fresh(category: str) -> None:
-    """Ensure data is fresh, fetching if stale."""
-    if is_data_stale(category):
-        print(f"Data for {category} is stale, fetching fresh data...")
-        fetch_and_store_data(category)
+def ensure_data_exists(category: str) -> None:
+    """Ensure data exists for a category (initial load only)."""
+    if not has_data(category):
+        logging.info(f"No data for {category}, fetching initial data...")
+        fetch_and_store_data(category, incremental=False)
+    else:
+        last_date = get_last_data_date(category)
+        logging.info(f"{category}: Data exists, last date = {last_date}")
+
+
+def update_all_indices(parallel: bool = False, max_workers: int = 3) -> None:
+    """Update all indices with latest data (incremental). Called by scheduler.
+
+    Args:
+        parallel: If True, update indices in parallel (faster but more memory)
+        max_workers: Max parallel workers (default 3 to avoid rate limiting)
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    logging.info("Starting scheduled data update...")
+
+    # Check which indices need updates (stale or missing)
+    indices_to_update = [
+        idx for idx in VALID_INDICES if needs_update(idx) or not has_data(idx)
+    ]
+
+    if not indices_to_update:
+        logging.info("All indices are up to date")
+        return
+
+    def update_single(index_name: str) -> tuple[str, str]:
+        try:
+            # Use full fetch if no data exists, incremental otherwise
+            incremental = has_data(index_name)
+            fetch_and_store_data(index_name, incremental=incremental)
+            return (index_name, "success")
+        except Exception as e:
+            logging.error(f"Failed to update {index_name}: {e}")
+            return (index_name, f"error: {e}")
+
+    if parallel and len(indices_to_update) > 1:
+        logging.info(
+            f"Updating {len(indices_to_update)} indices in parallel (max {max_workers} workers)..."
+        )
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {
+                executor.submit(update_single, idx): idx for idx in indices_to_update
+            }
+            for future in as_completed(futures):
+                idx, status = future.result()
+                logging.info(f"{idx}: {status}")
+    else:
+        for index_name in indices_to_update:
+            logging.info(f"Updating {index_name}...")
+            update_single(index_name)
+
+    # Force garbage collection after all updates
+    gc.collect()
+    logging.info("Scheduled data update complete")
 
 
 # =============================================================================
@@ -522,17 +733,19 @@ def ensure_data_fresh(category: str) -> None:
 
 
 def get_random_stocks(category: str) -> list[str]:
-    """Get N random stocks from the specified category."""
+    """Get N random stocks from the specified category.
+
+    Uses the symbols table for fast selection instead of scanning all prices.
+    """
     with get_db() as conn:
         result = conn.execute(
             """
             SELECT tradingsymbol 
-            FROM prices 
+            FROM symbols 
             WHERE segment = 'EQ' AND category = ?
-            GROUP BY tradingsymbol 
             ORDER BY random() 
             LIMIT ?
-        """,
+            """,
             [category, STOCKS_COUNT],
         ).fetchall()
 
@@ -542,41 +755,30 @@ def get_random_stocks(category: str) -> list[str]:
 def get_returns(
     symbols: list[str], category: str, segment: str, days: int
 ) -> dict[str, float]:
-    """Calculate returns for given symbols over N days - BATCH query."""
+    """Calculate returns for given symbols over N days.
+
+    Uses DuckDB's arg_min/arg_max for efficient single-pass computation
+    instead of double window function scans.
+    """
     start_date = date.today() - timedelta(days=days)
 
     with get_db() as conn:
-        # Single batch query for all symbols
+        # Single grouped scan using arg_min/arg_max
+        # arg_min(close, date) = close at earliest date
+        # arg_max(close, date) = close at latest date
         result = conn.execute(
             """
-            WITH start_prices AS (
-                SELECT tradingsymbol, close as start_close
-                FROM (
-                    SELECT tradingsymbol, close,
-                           ROW_NUMBER() OVER (PARTITION BY tradingsymbol ORDER BY date) as rn
-                    FROM prices
-                    WHERE category = ? AND segment = ? AND date >= ?
-                    AND tradingsymbol IN (SELECT UNNEST(?::VARCHAR[]))
-                )
-                WHERE rn = 1
-            ),
-            end_prices AS (
-                SELECT tradingsymbol, close as end_close
-                FROM (
-                    SELECT tradingsymbol, close,
-                           ROW_NUMBER() OVER (PARTITION BY tradingsymbol ORDER BY date DESC) as rn
-                    FROM prices
-                    WHERE category = ? AND segment = ?
-                    AND tradingsymbol IN (SELECT UNNEST(?::VARCHAR[]))
-                )
-                WHERE rn = 1
-            )
-            SELECT s.tradingsymbol, 
-                   ((e.end_close / s.start_close) - 1) * 100 as return_pct
-            FROM start_prices s
-            JOIN end_prices e ON s.tradingsymbol = e.tradingsymbol
+            SELECT
+                tradingsymbol,
+                (arg_max(close, date) / arg_min(close, date) - 1) * 100 AS return_pct
+            FROM prices
+            WHERE category = ?
+              AND segment = ?
+              AND date >= ?
+              AND tradingsymbol IN (SELECT UNNEST(?::VARCHAR[]))
+            GROUP BY tradingsymbol
             """,
-            [category, segment, start_date, symbols, category, segment, symbols],
+            [category, segment, start_date, symbols],
         ).fetchall()
 
         returns = {sym: 0.0 for sym in symbols}
@@ -589,42 +791,48 @@ def get_returns(
 def get_daily_values(
     symbols: list[str], category: str, segment: str
 ) -> list[DailyReturn]:
-    """Calculate daily normalized portfolio values - BATCH query."""
+    """Calculate daily normalized portfolio values.
+
+    Uses min_by to compute baseline prices efficiently in a single pass.
+    """
     with get_db() as conn:
-        # Single query: get all data, compute in SQL
+        # Compute each symbol's baseline (first close) once with min_by,
+        # then join to compute daily normalized values
         result = conn.execute(
             """
-            WITH initial_prices AS (
-                SELECT tradingsymbol, close as initial_close
-                FROM (
-                    SELECT tradingsymbol, close,
-                           ROW_NUMBER() OVER (PARTITION BY tradingsymbol ORDER BY date) as rn
-                    FROM prices
-                    WHERE category = ? AND segment = ?
-                    AND tradingsymbol IN (SELECT UNNEST(?::VARCHAR[]))
-                )
-                WHERE rn = 1
+            WITH base AS (
+                SELECT
+                    tradingsymbol,
+                    min_by(close, date) AS initial_close
+                FROM prices
+                WHERE category = ?
+                  AND segment = ?
+                  AND tradingsymbol IN (SELECT UNNEST(?::VARCHAR[]))
+                GROUP BY tradingsymbol
             ),
             daily_normalized AS (
-                SELECT p.date,
-                       SUM((? / i.initial_close) * p.close) as normalized_close,
-                       COUNT(*) as stock_count
+                SELECT 
+                    p.date,
+                    SUM((? / b.initial_close) * p.close) as normalized_close,
+                    COUNT(*) as stock_count
                 FROM prices p
-                JOIN initial_prices i ON p.tradingsymbol = i.tradingsymbol
-                WHERE p.category = ? AND p.segment = ?
-                AND p.tradingsymbol IN (SELECT UNNEST(?::VARCHAR[]))
+                JOIN base b ON p.tradingsymbol = b.tradingsymbol
+                WHERE p.category = ?
+                  AND p.segment = ?
+                  AND p.tradingsymbol IN (SELECT UNNEST(?::VARCHAR[]))
                 GROUP BY p.date
                 ORDER BY p.date
             )
-            SELECT date,
-                   ((normalized_close / (? * stock_count)) - 1) * 100 as return_percent,
-                   ? + (((normalized_close / (? * stock_count)) - 1) * ?) as current_invested
+            SELECT 
+                date,
+                ((normalized_close / (? * stock_count)) - 1) * 100 as return_percent,
+                ? + (((normalized_close / (? * stock_count)) - 1) * ?) as current_invested
             FROM daily_normalized
             """,
             [
                 category,
                 segment,
-                symbols,  # initial_prices CTE
+                symbols,  # base CTE
                 NORMALIZATION_FACTOR,  # multiplier calc
                 category,
                 segment,
@@ -912,26 +1120,143 @@ def stock_link(ticker: str, category: str) -> str:
 # =============================================================================
 
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
+# Global scheduler instance
+scheduler: BackgroundScheduler | None = None
+
+# Environment flags for multi-worker safety
+ENABLE_SCHEDULER = os.environ.get("ENABLE_SCHEDULER", "1").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+ENABLE_DATA_FETCH = os.environ.get("ENABLE_DATA_FETCH", "1").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
+
+def background_data_check():
+    """Check and fetch missing data in background thread.
+
+    Uses non-daemon thread to ensure completion even if main thread exits early.
+    Includes proper error handling and logging for debugging.
+    """
+    import threading
+    import traceback
+
+    def _check():
+        logging.info("Background: Starting data check for all indices...")
+        failed = []
+
+        for index_name in VALID_INDICES:
+            try:
+                logging.info(f"Background: Checking {index_name}...")
+                ensure_data_exists(index_name)
+                logging.info(f"Background: {index_name} OK")
+            except Exception as e:
+                logging.error(f"Background: Failed {index_name}: {e}")
+                logging.error(f"Background: Traceback:\n{traceback.format_exc()}")
+                failed.append(index_name)
+
+        if failed:
+            logging.warning(
+                f"Background: Data check complete with {len(failed)} failures: {failed}"
+            )
+        else:
+            logging.info("Background: Data check complete - all indices OK")
+
+        # Force cleanup after all fetches
+        gc.collect()
+
+    # Use non-daemon thread so it completes even if main thread is busy
+    thread = threading.Thread(target=_check, name="DataCheckThread")
+    thread.start()
+    return thread
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler."""
+    global scheduler
+
     # Startup
-    print("Initializing database...")
+    logging.info("Initializing database...")
     init_db()
-    print("Cleaning up old links...")
+    logging.info("Cleaning up old links...")
     cleanup_old_links()
 
-    # Pre-fetch data for all indices
-    for index_name in VALID_INDICES:
-        print(f"Checking data freshness for {index_name}...")
-        ensure_data_fresh(index_name)
+    # Check for missing data
+    # If ENABLE_DATA_FETCH=1 and no data exists, fetch in background
+    # This allows the server to start immediately while data loads
+    if ENABLE_DATA_FETCH:
+        # Quick check: if ANY index has data, start serving immediately
+        any_data = any(has_data(idx) for idx in VALID_INDICES)
+        if any_data:
+            logging.info(
+                "Data exists, starting background check for missing indices..."
+            )
+            background_data_check()
+        else:
+            # No data at all - must fetch synchronously for first startup
+            # Use parallel fetching to speed up initial load
+            from concurrent.futures import ThreadPoolExecutor, as_completed
 
-    print("MonkeyBeat ready!")
+            logging.info(
+                "No data found, fetching initial data in parallel (this may take a few minutes)..."
+            )
+
+            # Use 3 workers to balance speed vs rate limiting
+            with ThreadPoolExecutor(max_workers=3) as executor:
+                futures = {
+                    executor.submit(ensure_data_exists, idx): idx
+                    for idx in VALID_INDICES
+                }
+                for future in as_completed(futures):
+                    idx = futures[future]
+                    try:
+                        future.result()
+                        logging.info(f"Completed loading {idx}")
+                    except Exception as e:
+                        logging.error(f"Failed to load {idx}: {e}")
+    else:
+        logging.info("Data fetch disabled (ENABLE_DATA_FETCH=0)")
+
+    # Start background scheduler for daily updates
+    # Only if ENABLE_SCHEDULER=1 (prevents duplicate schedulers in multi-worker setups)
+    if ENABLE_SCHEDULER:
+        # Runs Mon-Fri at 18:30 IST (after market close at 15:30)
+        scheduler = BackgroundScheduler(timezone="Asia/Kolkata")
+        scheduler.add_job(
+            update_all_indices,
+            CronTrigger(day_of_week="mon-fri", hour=18, minute=30),
+            id="daily_update",
+            name="Daily stock data update",
+            replace_existing=True,
+        )
+        scheduler.start()
+        logging.info(
+            "Background scheduler started (daily updates Mon-Fri at 18:30 IST)"
+        )
+    else:
+        logging.info("Scheduler disabled (ENABLE_SCHEDULER=0)")
+
+    logging.info("MonkeyBeat ready!")
 
     yield
 
     # Shutdown
-    print("Shutting down...")
+    logging.info("Shutting down...")
+    if scheduler:
+        scheduler.shutdown(wait=False)
+        logging.info("Background scheduler stopped")
 
 
 app = FastAPI(
@@ -1012,10 +1337,7 @@ async def generate_portfolio(
         )
 
     try:
-        # Ensure data is fresh
-        ensure_data_fresh(index)
-
-        # Calculate portfolio
+        # Calculate portfolio (data should already exist from startup)
         portfolio = calculate_portfolio(index)
 
         # Save to database
@@ -1051,6 +1373,82 @@ async def get_shared_portfolio(request: Request, share_id: str):
         "portfolio.html",
         {"request": request, "partial": False, **portfolio_to_context(portfolio)},
     )
+
+
+# =============================================================================
+# API Endpoints (for manual operations)
+# =============================================================================
+
+
+@app.get("/api/status")
+async def api_status():
+    """Get data status for all indices."""
+    status = {}
+    for index_name in VALID_INDICES:
+        last_date = get_last_data_date(index_name)
+        status[index_name] = {
+            "has_data": has_data(index_name),
+            "last_date": last_date.isoformat() if last_date else None,
+            "needs_update": needs_update(index_name),
+        }
+
+    # Scheduler status
+    scheduler_info = None
+    if scheduler and scheduler.running:
+        job = scheduler.get_job("daily_update")
+        if job:
+            scheduler_info = {
+                "running": True,
+                "next_run": job.next_run_time.isoformat()
+                if job.next_run_time
+                else None,
+            }
+
+    return {"indices": status, "scheduler": scheduler_info}
+
+
+@app.post("/api/update")
+async def api_update(index: str | None = None):
+    """
+    Manually trigger data update.
+
+    Args:
+        index: Specific index to update, or None for all indices
+    """
+    if index and index not in VALID_INDICES:
+        raise HTTPException(status_code=400, detail=f"Invalid index: {index}")
+
+    indices_to_update = [index] if index else VALID_INDICES
+    results = {}
+
+    for idx in indices_to_update:
+        try:
+            if needs_update(idx):
+                fetch_and_store_data(idx, incremental=True)
+                results[idx] = "updated"
+            else:
+                results[idx] = "already_up_to_date"
+        except Exception as e:
+            results[idx] = f"error: {str(e)}"
+
+    gc.collect()
+    return {"results": results}
+
+
+@app.post("/api/refresh")
+async def api_refresh(index: str):
+    """
+    Force full data refresh for an index (deletes and re-fetches all data).
+    Use with caution - this takes several minutes.
+    """
+    if index not in VALID_INDICES:
+        raise HTTPException(status_code=400, detail=f"Invalid index: {index}")
+
+    try:
+        fetch_and_store_data(index, incremental=False)
+        return {"status": "refreshed", "index": index}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # =============================================================================
